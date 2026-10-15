@@ -1,0 +1,151 @@
+
+<?xml version="1.0"?>
+<sdf version="1.9">
+
+  <world name="maze">
+
+    <!-- Physics configuration -->
+    <physics name="default_physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Lighting -->
+    <light type="directional" name="sun">
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 -0.5 -1</direction>
+    </light>
+
+    <!-- Ground -->
+    <model name="ground">
+      <static>true</static>
+      <link name="ground_link">
+
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>12 12 0.2</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>12 12 0.2</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.4 0.4 0.4 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+
+      </link>
+      <pose>0 0 -0.1 0 0 0</pose>
+    </model>
+
+    <!-- Maze walls -->
+    <model name="maze_walls">
+      <static>true</static>
+      <link name="walls">
+
+        <!-- Outer boundaries -->
+        <collision name="north_collision">
+          <pose>0 6 1 0 0 0</pose>
+          <geometry><box><size>12 0.3 2</size></box></geometry>
+        </collision>
+        <visual name="north">
+          <pose>0 6 1 0 0 0</pose>
+          <geometry><box><size>12 0.3 2</size></box></geometry>
+        </visual>
+
+        <collision name="south_collision">
+          <pose>0 -6 1 0 0 0</pose>
+          <geometry><box><size>12 0.3 2</size></box></geometry>
+        </collision>
+        <visual name="south">
+          <pose>0 -6 1 0 0 0</pose>
+          <geometry><box><size>12 0.3 2</size></box></geometry>
+        </visual>
+
+        <collision name="east_collision">
+          <pose>6 0 1 0 0 0</pose>
+          <geometry><box><size>0.3 12 2</size></box></geometry>
+        </collision>
+        <visual name="east">
+          <pose>6 0 1 0 0 0</pose>
+          <geometry><box><size>0.3 12 2</size></box></geometry>
+        </visual>
+
+        <collision name="west_collision">
+          <pose>-6 0 1 0 0 0</pose>
+          <geometry><box><size>0.3 12 2</size></box></geometry>
+        </collision>
+        <visual name="west">
+          <pose>-6 0 1 0 0 0</pose>
+          <geometry><box><size>0.3 12 2</size></box></geometry>
+        </visual>
+
+        <!-- Internal maze walls -->
+        <collision name="wall1_collision">
+          <pose>-3 -2 1 0 0 0</pose>
+          <geometry><box><size>0.3 8 2</size></box></geometry>
+        </collision>
+        <visual name="wall1">
+          <pose>-3 -2 1 0 0 0</pose>
+          <geometry><box><size>0.3 8 2</size></box></geometry>
+        </visual>
+
+        <collision name="wall2_collision">
+          <pose>0 3 1 0 0 0</pose>
+          <geometry><box><size>0.3 6 2</size></box></geometry>
+        </collision>
+        <visual name="wall2">
+          <pose>0 3 1 0 0 0</pose>
+          <geometry><box><size>0.3 6 2</size></box></geometry>
+        </visual>
+
+        <collision name="wall3_collision">
+          <pose>3 -3 1 0 0 0</pose>
+          <geometry><box><size>0.3 6 2</size></box></geometry>
+        </collision>
+        <visual name="wall3">
+          <pose>3 -3 1 0 0 0</pose>
+          <geometry><box><size>0.3 6 2</size></box></geometry>
+        </visual>
+
+        <collision name="wall4_collision">
+          <pose>-1.5 0 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </collision>
+        <visual name="wall4">
+          <pose>-1.5 0 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </visual>
+
+        <collision name="wall5_collision">
+          <pose>3 2 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </collision>
+        <visual name="wall5">
+          <pose>3 2 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </visual>
+
+        <collision name="wall6_collision">
+          <pose>0 -3 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </collision>
+        <visual name="wall6">
+          <pose>0 -3 1 0 0 0</pose>
+          <geometry><box><size>3 0.3 2</size></box></geometry>
+        </visual>
+
+      </link>
+    </model>
+
+  </world>
+</sdf>
