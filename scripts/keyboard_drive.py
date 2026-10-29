@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-"""Continuous ROAM skid-steer keyboard teleop using ROS 2 -> Gazebo bridge.
 
-Requires Ubuntu desktop, ROS 2 Jazzy and ros_gz_bridge; python3-tk for GUI.
-The window must have keyboard focus. UI speeds are commanded wheel-side speeds,
-not measured encoder feedback.
-"""
-import math
+#!/usr/bin/env python3
+
+"""Independent left/right skid-steer throttle for ROAM."""
+
 import subprocess
 import tkinter as tk
 
@@ -14,119 +11,197 @@ from geometry_msgs.msg import Twist
 
 RATE_HZ = 30
 DT = 1.0 / RATE_HZ
+
 WHEEL_SEPARATION = 0.456
-MAX_SIDE_SPEED = 1.0     # m/s at tire circumference
-ACCEL = 0.6              # m/s^2 speed ramp while driving
-BRAKE = 1.4              # m/s^2 speed ramp while stopping
-TURN = 0.55              # m/s difference added/subtracted by steering
+MAX_SPEED = 1.0
+SPEED_STEP = 0.1
+
+ACCELERATION = 0.6
+BRAKING = 1.4
 
 
-def approach(current, target, delta):
-    return max(current - delta, min(current + delta, target))
+def clamp(value, minimum, maximum):
+    return max(minimum, min(maximum, value))
+
+
+def approach(current, target, step):
+    if current < target:
+        return min(current + step, target)
+    return max(current - step, target)
 
 
 class Teleop:
     def __init__(self, root):
         self.root = root
-        self.held = set()
-        self.left = self.right = 0.0
-        self.limit = 0.65  # adjustable max side speed
         self.running = True
 
+        self.target_left = 0.0
+        self.target_right = 0.0
+
+        self.left = 0.0
+        self.right = 0.0
+
         self.node = rclpy.create_node("roam_keyboard_teleop")
-        self.pub = self.node.create_publisher(Twist, "/rover/cmd_vel", 10)
+        self.pub = self.node.create_publisher(
+            Twist, "/rover/cmd_vel", 10
+        )
+
         self.bridge = subprocess.Popen([
-            "ros2", "run", "ros_gz_bridge", "parameter_bridge",
-            "/rover/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
+            "ros2", "run", "ros_gz_bridge",
+            "parameter_bridge",
+            "/rover/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist"
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        root.title("ROAM | Skid-Steer Drive")
-        root.geometry("530x340")
-        root.resizable(False, False)
-        tk.Label(root, text="ROAM 4WD SKID-STEER", font=("Arial", 18, "bold")).pack(pady=(15, 5))
-        tk.Label(root, text="Hold W / ↑ forward, S / ↓ reverse, A / ← left, D / → right").pack()
-        tk.Label(root, text="W+A or W+D for smooth curves | + / - change speed | Space brake | Q quit").pack(pady=6)
-        self.label = tk.Label(root, font=("Consolas", 13), justify="left")
-        self.label.pack(pady=12)
-        tk.Button(root, text="STOP", command=self.stop).pack()
-        tk.Label(root, text="Click this window for keyboard focus. Release keys to decelerate.").pack(pady=10)
-        root.bind("<KeyPress>", self.down)
-        root.bind("<KeyRelease>", self.up)
-        root.bind("<FocusOut>", lambda _: self.stop())
+        root.title("ROAM | Independent Skid-Steer")
+        root.geometry("550x400")
+
+        tk.Label(
+            root,
+            text="ROAM 4WD SKID-STEER",
+            font=("Arial", 18, "bold")
+        ).pack(pady=15)
+
+        tk.Label(
+            root,
+            text="W/S: Left wheels     ↑/↓: Right wheels"
+        ).pack()
+
+        tk.Label(
+            root,
+            text="Space: Brake     R: Reset     Q: Quit"
+        ).pack(pady=5)
+
+        self.label = tk.Label(
+            root,
+            font=("Consolas", 13),
+            justify="left"
+        )
+        self.label.pack(pady=18)
+
+        tk.Button(
+            root,
+            text="BRAKE",
+            command=self.brake
+        ).pack()
+
+        tk.Label(
+            root,
+            text="Click the window to control the rover."
+        ).pack(pady=10)
+
+        root.bind("<KeyPress>", self.key_pressed)
+        root.bind("<FocusOut>", lambda _: self.brake())
         root.protocol("WM_DELETE_WINDOW", self.close)
+
         root.focus_force()
         self.tick()
 
-    @staticmethod
-    def key(event):
-        return event.keysym.lower()
+    def key_pressed(self, event):
+        key = event.keysym.lower()
 
-    def down(self, event):
-        k = self.key(event)
-        if k in ("q", "escape"):
+        if key == "w":
+            self.target_left += SPEED_STEP
+
+        elif key == "s":
+            self.target_left -= SPEED_STEP
+
+        elif key == "up":
+            self.target_right += SPEED_STEP
+
+        elif key == "down":
+            self.target_right -= SPEED_STEP
+
+        elif key == "space":
+            self.brake()
+
+        elif key == "r":
+            self.reset()
+
+        elif key in ("q", "escape"):
             self.close()
             return
-        if k in ("plus", "equal", "kp_add"):
-            if k not in self.held:
-                self.limit = min(MAX_SIDE_SPEED, self.limit + 0.1)
-        elif k in ("minus", "underscore", "kp_subtract"):
-            if k not in self.held:
-                self.limit = max(0.1, self.limit - 0.1)
-        elif k == "space":
-            self.stop()
-        else:
-            self.held.add(k)
 
-    def up(self, event):
-        self.held.discard(self.key(event))
+        self.target_left = clamp(
+            self.target_left, -MAX_SPEED, MAX_SPEED
+        )
+        self.target_right = clamp(
+            self.target_right, -MAX_SPEED, MAX_SPEED
+        )
 
-    def stop(self):
-        self.held.clear()
+    def brake(self):
+        self.target_left = 0.0
+        self.target_right = 0.0
+
+    def reset(self):
+        self.brake()
+        self.left = 0.0
+        self.right = 0.0
+        self.publish()
 
     def publish(self):
         msg = Twist()
-        # Differential-drive conversion from independent side speeds.
+
         msg.linear.x = (self.left + self.right) / 2.0
-        msg.angular.z = (self.right - self.left) / WHEEL_SEPARATION
-        # Gazebo plugin's angular limit is 1.5 rad/s; limit commands here too.
-        msg.angular.z = max(-1.5, min(1.5, msg.angular.z))
+        msg.angular.z = (
+            (self.right - self.left) / WHEEL_SEPARATION
+        )
+
         self.pub.publish(msg)
 
     def tick(self):
         if not self.running:
             return
-        forward = int(bool(self.held & {"w", "up"})) - int(bool(self.held & {"s", "down"}))
-        steer = int(bool(self.held & {"a", "left"})) - int(bool(self.held & {"d", "right"}))
-        # Positive steering: right faster than left -> left turn.
-        target_l = forward * self.limit - steer * TURN / 2
-        target_r = forward * self.limit + steer * TURN / 2
-        scale = max(1, abs(target_l) / MAX_SIDE_SPEED, abs(target_r) / MAX_SIDE_SPEED)
-        target_l /= scale
-        target_r /= scale
-        self.left = approach(self.left, target_l, (BRAKE if not forward and not steer else ACCEL) * DT)
-        self.right = approach(self.right, target_r, (BRAKE if not forward and not steer else ACCEL) * DT)
+
+        left_rate = (
+            BRAKING if self.target_left == 0 else ACCELERATION
+        )
+        right_rate = (
+            BRAKING if self.target_right == 0 else ACCELERATION
+        )
+
+        self.left = approach(
+            self.left,
+            self.target_left,
+            left_rate * DT
+        )
+
+        self.right = approach(
+            self.right,
+            self.target_right,
+            right_rate * DT
+        )
+
         self.publish()
+
         self.label.configure(text=(
-            f"Left wheel side:  {self.left:+.2f} m/s\n"
-            f"Right wheel side: {self.right:+.2f} m/s\n"
-            f"Speed setting:    {self.limit:.2f} m/s\n"
-            f"Command v:        {(self.left + self.right)/2:+.2f} m/s\n"
-            f"Command turn:     {max(-1.5, min(1.5,(self.right-self.left)/WHEEL_SEPARATION)):+.2f} rad/s"
+            f"LEFT SIDE\n"
+            f"  Target: {self.target_left:+.2f} m/s\n"
+            f"  Actual command: {self.left:+.2f} m/s\n\n"
+            f"RIGHT SIDE\n"
+            f"  Target: {self.target_right:+.2f} m/s\n"
+            f"  Actual command: {self.right:+.2f} m/s\n\n"
+            f"Linear velocity: {(self.left+self.right)/2:+.2f} m/s\n"
+            f"Angular velocity: {(self.right-self.left)/WHEEL_SEPARATION:+.2f} rad/s"
         ))
-        self.root.after(round(1000 / RATE_HZ), self.tick)
+
+        self.root.after(
+            round(1000 / RATE_HZ),
+            self.tick
+        )
 
     def close(self):
         if not self.running:
             return
+
         self.running = False
-        self.left = self.right = 0
-        for _ in range(3):
-            self.publish()
+        self.reset()
+
         self.bridge.terminate()
         try:
             self.bridge.wait(timeout=2)
         except subprocess.TimeoutExpired:
             self.bridge.kill()
+
         self.node.destroy_node()
         self.root.destroy()
 
@@ -134,6 +209,7 @@ class Teleop:
 def main():
     rclpy.init()
     root = tk.Tk()
+
     try:
         Teleop(root)
         root.mainloop()
