@@ -3,7 +3,9 @@
 
 """Independent left/right skid-steer throttle for ROAM."""
 
+import argparse
 import subprocess
+import signal
 import tkinter as tk
 
 import rclpy
@@ -31,7 +33,7 @@ def approach(current, target, step):
 
 
 class Teleop:
-    def __init__(self, root):
+    def __init__(self, root, bridge_commands=True):
         self.root = root
         self.running = True
 
@@ -46,11 +48,13 @@ class Teleop:
             Twist, "/rover/cmd_vel", 10
         )
 
-        self.bridge = subprocess.Popen([
-            "ros2", "run", "ros_gz_bridge",
-            "parameter_bridge",
-            "/rover/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist"
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.bridge = None
+        if bridge_commands:
+            self.bridge = subprocess.Popen([
+                "ros2", "run", "ros_gz_bridge",
+                "parameter_bridge",
+                "/rover/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist"
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         root.title("ROAM | Independent Skid-Steer")
         root.geometry("550x400")
@@ -196,22 +200,30 @@ class Teleop:
         self.running = False
         self.reset()
 
-        self.bridge.terminate()
-        try:
-            self.bridge.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            self.bridge.kill()
+        if self.bridge is not None:
+            self.bridge.terminate()
+            try:
+                self.bridge.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self.bridge.kill()
+                self.bridge.wait()
 
         self.node.destroy_node()
         self.root.destroy()
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--no-bridge', action='store_true',
+                        help='Use the command bridge started by the sensor launcher.')
+    args = parser.parse_args()
     rclpy.init()
     root = tk.Tk()
 
     try:
-        Teleop(root)
+        teleop = Teleop(root, bridge_commands=not args.no_bridge)
+        signal.signal(signal.SIGINT, lambda *_: teleop.close())
+        signal.signal(signal.SIGTERM, lambda *_: teleop.close())
         root.mainloop()
     finally:
         if rclpy.ok():

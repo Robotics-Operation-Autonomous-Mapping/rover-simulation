@@ -51,6 +51,11 @@ else bad '/opt/ros/jazzy/setup.bash missing'; fi
 package ros-jazzy-rviz2
 
 section 'Gazebo Harmonic'
+if [[ -f /opt/ros/jazzy/setup.bash ]]; then
+  set +u
+  source /opt/ros/jazzy/setup.bash
+  set -u
+fi
 if command -v gz >/dev/null 2>&1; then
   gz_output=$(gz sim --version 2>&1 || true)
   printf 'Gazebo reports: %s\n' "$gz_output"
