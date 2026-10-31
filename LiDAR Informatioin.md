@@ -20,7 +20,7 @@ source ~/.bashrc
 
 ## 📂 Simulation Setup & SDF Configuration
 
-To get started, you must **create your own SDF file from Gazebo** (or use an existing robot world) and save it to your preferred path (e.g., `/home/christopehr/roverSim2/lidarsim.sdf`). 
+To get started, you must **create your own SDF file from Gazebo** (or use an existing robot world) and save it to your preferred path (e.g., `/home/christopehr/roverSim2/lidarsim.sdf`).
 
 To make the LiDAR and IMU operational, your SDF file needs three key components: the **World-level Sensor System Plugin**, the **GPU LiDAR Sensor block**, and the **IMU Sensor block**.
 
@@ -36,7 +36,7 @@ Ensure your `<world>` tag includes the Gazebo sensors system plugin so it proces
     name="gz::sim::systems::Sensors">
     <render_engine>ogre2</render_engine>
   </plugin>
-  
+
   <!-- Other world tags (lights, physics, etc.) go here -->
 </world>
 ```

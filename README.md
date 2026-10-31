@@ -2,6 +2,31 @@
 
 Supported: **Ubuntu 24.04 LTS**, x86_64 or aarch64. Standard stack: **ROS 2 Jazzy**, **Gazebo Harmonic**, **ROS–Gazebo bridge**, **GCC/G++ 13+**, **CMake 3.22+**, **C++20**, RViz2, colcon, rosdep, ros2_control.
 
+## Combined sensor branch
+
+`sensors-integrated` combines `main`, `wheels`, `rgb-camera`, `LiDAR`, and
+`gnss-ins-testing`. `GNSS-+-INS` is already an ancestor of `main`.
+The updated ROAM rover, worlds, keyboard controls, and renderer selection from
+`main` are preserved. Start the main simulation with:
+
+```bash
+bash scripts/launch_roam.sh road  # also maze or forest
+```
+
+The sensor contributions remain separate demonstrations; they are not all
+mounted on the ROAM rover yet:
+
+| Contribution | Entry point | Current scope |
+| --- | --- | --- |
+| Wheel encoders | `scripts/run_wheel_rover.sh` and the Wheels section below | Separate basic rover with ROS encoder nodes |
+| RGB camera | `gz sim -r worlds/camera_test.sdf` | Static camera test world |
+| LiDAR / IMU | [LiDAR setup](<LiDAR Informatioin.md>) | Configuration snippets and bridge instructions; no runnable LiDAR world |
+| GNSS / INS | [Testbed instructions](<GNSS+INS_Testing/GNSS + INS README.txt>) | Separate cube world and synthetic measurements |
+
+`scripts/run_rover.sh` still starts `main`'s ROAM test world. The wheels
+branch's launcher is named `scripts/run_wheel_rover.sh` here so both remain
+available. Build outputs, logs, and Python caches are ignored by Git.
+
 ## Before installing
 
 Run from the repository root:

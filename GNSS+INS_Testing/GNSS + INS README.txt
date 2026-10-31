@@ -27,7 +27,7 @@ To set up the test itself:
 In terminal 1 run: gz sim -r cube_world.sdf
 This runs the world with the cube in it.
 
-In terminal 2 run: 
+In terminal 2 run:
 ros2 run ros_gz_bridge parameter_bridge \
   '/model/cube/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry' \
   '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU' \
@@ -56,5 +56,5 @@ To see the ins data in each message:
 
 Run: ros2 topic echo /ins/odom
 
-You can compare the gnss and ins data with the ground truth. 
+You can compare the gnss and ins data with the ground truth.
 Note: The data will be unchanging, since the cube isnt moving, unless you manually move it
