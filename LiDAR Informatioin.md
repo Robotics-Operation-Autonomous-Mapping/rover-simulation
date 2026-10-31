@@ -141,7 +141,7 @@ Add the following `<sensor>` blocks inside the appropriate link element (e.g., y
 Open a terminal and start the Gazebo Sim environment with your SDF file path (the `-r` flag forces physics simulation to run immediately on start):
 
 ```bash
-ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="/home/christopehr/roverSim2/lidarsim.sdf -r"
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="<path_to_sdf_file> -r"
 ```
 
 ### Step 2: Start the ROS-Gazebo Bridge
