@@ -1,0 +1,291 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+
+  <world name="camera_test">
+
+    <!-- =========================
+         GAZEBO SYSTEM PLUGINS
+         ========================= -->
+
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <!-- Required for cameras and other sensors -->
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+
+    <!-- =========================
+         LIGHT
+         ========================= -->
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+
+      <pose>0 0 10 0 0 0</pose>
+
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+
+    <!-- =========================
+         GROUND
+         ========================= -->
+
+    <model name="ground">
+      <static>true</static>
+
+      <link name="ground_link">
+
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+
+          <material>
+            <ambient>0.4 0.4 0.4 1</ambient>
+            <diffuse>0.6 0.6 0.6 1</diffuse>
+          </material>
+
+        </visual>
+
+      </link>
+    </model>
+
+
+    <!-- =========================
+         RED TEST BOX
+         Camera should be looking
+         toward this object.
+         ========================= -->
+
+    <model name="red_test_box">
+
+      <static>true</static>
+
+      <!--
+      x = 3 metres in front of camera
+      y = 0
+      z = 0.5 so the box sits on ground
+      -->
+      <pose>3 0 0.5 0 0 0</pose>
+
+      <link name="box_link">
+
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+
+        </visual>
+
+      </link>
+
+    </model>
+
+
+    <!-- =========================
+         BLUE TEST BOX
+         Gives the camera another
+         object to see.
+         ========================= -->
+
+    <model name="blue_test_box">
+
+      <static>true</static>
+
+      <pose>5 1.5 0.75 0 0 0</pose>
+
+      <link name="box_link">
+
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.5 1.5 1.5</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name="visual">
+
+          <geometry>
+            <box>
+              <size>1.5 1.5 1.5</size>
+            </box>
+          </geometry>
+
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+          </material>
+
+        </visual>
+
+      </link>
+
+    </model>
+
+
+    <!-- =========================
+         FIRST SIMULATED CAMERA
+
+         This will eventually represent
+         one of the VEN-161-61U3C
+         cameras.
+
+         For now:
+         640 x 480
+         30 FPS
+
+         We will change this later to
+         the real camera specifications.
+         ========================= -->
+
+    <model name="surround_front_camera">
+
+      <!-- Camera does not move -->
+      <static>true</static>
+
+      <!--
+      Position:
+      x = 0
+      y = 0
+      z = 1.5 metres
+
+      Rotation:
+      roll  = 0
+      pitch = 0
+      yaw   = 0
+
+      The camera faces toward +X,
+      where the red box is located.
+      -->
+      <pose>0 0 1.5 0 0 0</pose>
+
+      <link name="camera_link">
+
+        <!-- Small visible housing so you
+             can see where the camera is -->
+        <visual name="camera_body">
+
+          <geometry>
+            <box>
+              <size>0.2 0.3 0.2</size>
+            </box>
+          </geometry>
+
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+
+        </visual>
+
+
+        <!-- THE ACTUAL CAMERA SENSOR -->
+        <sensor
+          name="surround_front_sensor"
+          type="camera">
+
+          <!-- Keep sensor running -->
+          <always_on>true</always_on>
+
+          <!-- Temporary development FPS -->
+          <update_rate>30</update_rate>
+
+          <!-- Gazebo Transport topic -->
+          <topic>/cameras/surround_front/image</topic>
+
+
+          <camera>
+
+            <!--
+            About 60 degrees.
+            Temporary value until you know
+            the real lens / field of view.
+            -->
+            <horizontal_fov>1.047</horizontal_fov>
+
+
+            <!-- RGB image configuration -->
+            <image>
+
+              <width>640</width>
+              <height>480</height>
+
+              <!-- RGB image -->
+              <format>R8G8B8</format>
+
+            </image>
+
+
+            <!-- Rendering distance -->
+            <clip>
+
+              <!-- Don't render objects closer
+                   than 10 cm -->
+              <near>0.1</near>
+
+              <!-- Maximum viewing distance -->
+              <far>100</far>
+
+            </clip>
+
+          </camera>
+
+        </sensor>
+
+      </link>
+
+    </model>
+
+
+  </world>
+
+</sdf>
