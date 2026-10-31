@@ -13,6 +13,11 @@ from my_robot_msgs.msg import WheelEncoders
 class WheelEncoderPublisher(Node):
     def __init__(self):
         super().__init__('wheel_encoder_publisher')
+        publish_rate = self.declare_parameter('publish_rate', 50.0).value
+        if not math.isfinite(publish_rate) or publish_rate <= 0:
+            raise ValueError('publish_rate must be finite and positive')
+        self.publish_period_ns = round(1e9 / publish_rate)
+        self.last_publish_stamp_ns = None
 
         self.encoder_publisher = self.create_publisher(
             WheelEncoders, '/rover/wheel_encoders', 10
@@ -58,12 +63,21 @@ class WheelEncoderPublisher(Node):
             )
             return
 
+        # Older Harmonic releases publish joint states every physics iteration.
+        # Throttle by measurement time so pausing and slow rendering are safe.
+        stamp_ns = msg.header.stamp.sec * 1_000_000_000 + msg.header.stamp.nanosec
+        last_stamp = self.last_publish_stamp_ns
+        period = self.publish_period_ns
+        if last_stamp is not None and 0 <= stamp_ns - last_stamp < period:
+            return
+
         encoders = WheelEncoders()
         encoders.header = msg.header
         encoders.wheel_names = wheel_names
         encoders.angle_rad = angles
         encoders.velocity_rad_s = velocities
         self.encoder_publisher.publish(encoders)
+        self.last_publish_stamp_ns = stamp_ns
 
 
 def main(args=None):

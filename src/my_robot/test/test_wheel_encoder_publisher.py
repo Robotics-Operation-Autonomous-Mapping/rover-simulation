@@ -19,7 +19,8 @@ def convert(msg):
     # Exercise the callback without starting DDS or needing a running simulator.
     publisher = Mock()
     logger = Mock()
-    node = SimpleNamespace(encoder_publisher=publisher, get_logger=lambda: logger)
+    node = SimpleNamespace(encoder_publisher=publisher, get_logger=lambda: logger,
+                           last_publish_stamp_ns=None, publish_period_ns=20_000_000)
     WheelEncoderPublisher.joint_state_callback(node, msg)
     return publisher, logger
 
@@ -72,3 +73,23 @@ def test_rejects_incomplete_or_invalid_measurements(case):
 
     publisher.publish.assert_not_called()
     logger.warning.assert_called_once()
+
+
+def test_throttles_by_simulation_timestamp_and_recovers_after_reset():
+    publisher = Mock()
+    node = SimpleNamespace(
+        encoder_publisher=publisher, get_logger=Mock(),
+        publish_period_ns=20_000_000, last_publish_stamp_ns=None,
+    )
+    msg = JointState()
+    msg.name = WHEELS.copy()
+    msg.position = [0.0] * 4
+    msg.velocity = [1.0] * 4
+    for stamp in [1_000_000, 2_000_000, 20_000_000, 21_000_000]:
+        msg.header.stamp.nanosec = stamp
+        WheelEncoderPublisher.joint_state_callback(node, msg)
+    assert publisher.publish.call_count == 2
+    # A world reset sends time backwards; output should resume immediately.
+    msg.header.stamp.nanosec = 0
+    WheelEncoderPublisher.joint_state_callback(node, msg)
+    assert publisher.publish.call_count == 3

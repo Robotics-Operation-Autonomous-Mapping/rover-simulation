@@ -2,30 +2,101 @@
 
 Supported: **Ubuntu 24.04 LTS**, x86_64 or aarch64. Standard stack: **ROS 2 Jazzy**, **Gazebo Harmonic**, **ROS–Gazebo bridge**, **GCC/G++ 13+**, **CMake 3.22+**, **C++20**, RViz2, colcon, rosdep, ros2_control.
 
-## Combined sensor branch
+## Rover with all sensors
 
-`sensors-integrated` combines `main`, `wheels`, `rgb-camera`, `LiDAR`, and
-`gnss-ins-testing`. `GNSS-+-INS` is already an ancestor of `main`.
-The updated ROAM rover, worlds, keyboard controls, and renderer selection from
-`main` are preserved. Start the main simulation with:
+`sensors-integrated` combines the sensor branches with the updated rover and
+worlds from `main`. The RGB camera, 3D LiDAR, IMU, and GNSS antenna are fixed to
+the ROAM rover with mass and collision geometry. The wheel encoder nodes read
+this rover's four wheel joints.
+
+Build once from the repository root, and rebuild after changing the ROS package,
+sensor mounts, or viewer configuration:
 
 ```bash
-bash scripts/launch_roam.sh road  # also maze or forest
+source /opt/ros/jazzy/setup.bash  # setup.zsh in a zsh terminal
+colcon build --packages-up-to my_robot
+bash scripts/launch_roam.sh road
 ```
 
-The sensor contributions remain separate demonstrations; they are not all
-mounted on the ROAM rover yet:
+The launcher loads ROS and the workspace, starts Gazebo, bridges all sensors,
+opens the keyboard control window, and opens RViz with the front camera image,
+3D LiDAR cloud, sensor frames, and synthetic INS poses. `maze`, `forest`, and
+`roam_test` are also supported. `bash scripts/run_rover.sh` selects `roam_test`.
+Use W/S for the left wheels, Up/Down for the right wheels, and Space to brake.
+Close the old simulation before starting another one. Ctrl+C in the launch
+terminal stops Gazebo, the sensor nodes, RViz, and the keyboard controller.
 
-| Contribution | Entry point | Current scope |
-| --- | --- | --- |
-| Wheel encoders | `scripts/run_wheel_rover.sh` and the Wheels section below | Separate basic rover with ROS encoder nodes |
-| RGB camera | `gz sim -r worlds/camera_test.sdf` | Static camera test world |
-| LiDAR / IMU | [LiDAR setup](<LiDAR Informatioin.md>) | Configuration snippets and bridge instructions; no runnable LiDAR world |
-| GNSS / INS | [Testbed instructions](<GNSS+INS_Testing/GNSS + INS README.txt>) | Separate cube world and synthetic measurements |
+```bash
+bash scripts/launch_roam.sh maze --no-view      # sensors without RViz
+bash scripts/launch_roam.sh forest --headless  # server + sensors, no windows
+bash scripts/launch_roam.sh road --no-sensors  # Gazebo + controls, no ROS sensors
+```
 
-`scripts/run_rover.sh` still starts `main`'s ROAM test world. The wheels
-branch's launcher is named `scripts/run_wheel_rover.sh` here so both remain
-available. Build outputs, logs, and Python caches are ignored by Git.
+The GUI renderer is selected automatically; override it with `--render-engine
+ogre2` or `--render-engine ogre`. Camera and GPU LiDAR rendering always use
+Ogre 2. `--headless` disables windows but still needs working sensor rendering
+(for example, an available X display).
+
+### Sensor topics
+
+In another terminal, source `/opt/ros/jazzy/setup.bash` and `install/setup.bash`
+(use `.zsh` files in zsh), then inspect the following ROS topics:
+
+| Sensor / output | ROS topic | Message type | Configured rate in simulation time |
+| --- | --- | --- | --- |
+| Front RGB camera, 640 × 480 | `/cameras/surround_front/image` | `sensor_msgs/msg/Image` | 30 Hz |
+| Camera calibration | `/cameras/surround_front/camera_info` | `sensor_msgs/msg/CameraInfo` | 30 Hz |
+| 360° LiDAR, 1800 × 32 rays | `/lidar_points` | `sensor_msgs/msg/PointCloud2` | 10 Hz |
+| IMU | `/imu` | `sensor_msgs/msg/Imu` | 100 Hz |
+| GNSS | `/gnss/fix` | `sensor_msgs/msg/NavSatFix` | 20 Hz |
+| Synthetic INS | `/ins/odom` | `nav_msgs/msg/Odometry` | 100 Hz |
+| Four wheel encoders | `/rover/wheel_encoders` | `my_robot_msgs/msg/WheelEncoders` | Up to 50 Hz |
+| Wheel odometry | `/rover/odom` | `nav_msgs/msg/Odometry` | 50 Hz |
+| Ground truth | `/rover/ground_truth/odometry` | `nav_msgs/msg/Odometry` | 100 Hz |
+
+```bash
+ros2 topic echo /imu --once --qos-reliability best_effort
+ros2 topic echo /gnss/fix --once --qos-reliability best_effort
+ros2 topic echo /rover/wheel_encoders --once
+ros2 topic hz /lidar_points
+```
+
+Camera and LiDAR delivery can fall below their configured rates when rendering
+or transport cannot keep up. Simulation-time rates also differ from wall-clock
+rates when the simulator runs slower than real time.
+
+GNSS uses Gazebo's native NavSat sensor with a WGS84 origin at latitude
+51.0447°, longitude -114.0719°, elevation 1045 m, in an east/north/up world.
+Horizontal noise is 0.00000018 degrees (roughly 1–2 cm here), following the
+[Gazebo Sensors 8 angular-noise convention](https://github.com/gazebosim/gz-sensors/blob/gz-sensors8/src/NavSatSensor.cc).
+Altitude noise is 4 cm. The native ROS bridge leaves GNSS covariance unknown.
+The IMU has Gaussian angular-velocity and acceleration noise. LiDAR uses a
+generic 360° scan based on the branch settings; it does not reproduce Livox's
+scanning pattern.
+
+The INS output preserves the original testbed's approach: simulated 3D ground
+truth plus 5 mm position noise. Orientation and velocity come from truth.
+This is a synthetic test signal, not an inertial estimator or GNSS/IMU fusion.
+The `world -> base_link` TF also follows truth so the sensor view stays aligned;
+wheel odometry remains a separate measurement.
+
+Sensor frames are read from `models/roam_rover/model.sdf`, including each
+sensor's offset from its housing and the camera optical-frame rotation. Bridge
+configuration and the RViz layout are in `src/my_robot/config/`. All sensor
+processes use `GZ_PARTITION=roam_rover_sensors` by default and honor a custom
+value. For a manually started viewer and bridge against this simulation:
+
+```bash
+export GZ_PARTITION=roam_rover_sensors
+ros2 launch my_robot rover_sensors.launch.py
+```
+
+Use that command only when the main launcher was started with `--no-sensors`
+to avoid duplicate bridges and publishers.
+
+The original standalone camera, GNSS/INS cube testbed, basic wheel rover, and
+[LiDAR setup notes](<LiDAR Informatioin.md>) are preserved as references.
+Build outputs, logs, Python caches, and temporary worlds are ignored by Git.
 
 ## Before installing
 
@@ -66,7 +137,7 @@ ros2 pkg list | grep ros_gz
 - ROS 2 Jazzy: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
 - Gazebo Harmonic: https://gazebosim.org/docs/harmonic/install_ubuntu/
 
-## Wheels
+## Standalone basic wheel rover
 
 The four-wheel skid-steer rover, timed drive helper, wheel encoder nodes and
 custom encoder message are integrated into this colcon workspace. They use the club's

@@ -13,13 +13,16 @@ setup(
          ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
+        ('share/' + package_name + '/config', glob('config/*')),
+        ('share/' + package_name + '/models/roam_rover',
+         ['../../models/roam_rover/model.sdf']),
     ],
     install_requires=['setuptools'],
     tests_require=['pytest'],
     zip_safe=True,
     maintainer='Arham',
     maintainer_email='arham@example.com',
-    description='Rover encoder nodes',
+    description='Simulated rover sensors, frames, and wheel encoder nodes',
     license='Apache-2.0',
     entry_points={
         'console_scripts': [
@@ -27,6 +30,7 @@ setup(
             'my_robot.wheel_encoder_publisher:main',
             'wheel_encoder_subscriber = '
             'my_robot.wheel_encoder_subscriber:main',
+            'rover_sensor_state = my_robot.rover_state:main',
         ],
     },
 )
