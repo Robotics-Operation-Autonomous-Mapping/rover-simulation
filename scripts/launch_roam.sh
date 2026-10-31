@@ -77,13 +77,6 @@ ROS_SETUP="/opt/ros/$ROS_DISTRO/setup.bash"
 # DEPENDENCY CHECKS
 # ==========================================
 
-for cmd in gz python3; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Missing dependency: $cmd"
-        exit 1
-    fi
-done
-
 for file in "$WORLD_FILE" "$MODEL_FILE" "$CONTROLLER" "$ROS_SETUP"; do
     if [[ ! -f "$file" ]]; then
         echo "Required file missing: $file"
@@ -91,13 +84,18 @@ for file in "$WORLD_FILE" "$MODEL_FILE" "$CONTROLLER" "$ROS_SETUP"; do
     fi
 done
 
-if ! command -v ros2 >/dev/null 2>&1; then
-    # ros2 may not be on PATH until ROS setup is sourced.
-    if [[ ! -f "/opt/ros/$ROS_DISTRO/bin/ros2" ]]; then
-        echo "ROS 2 installation not found."
+# Jazzy's vendor packages expose gz through the ROS environment hooks.
+# ROS setup scripts may reference unset variables.
+set +u
+source "$ROS_SETUP"
+set -u
+
+for cmd in gz python3 ros2; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Missing dependency: $cmd"
         exit 1
     fi
-fi
+done
 
 # ==========================================
 # RENDER ENGINE SELECTION
