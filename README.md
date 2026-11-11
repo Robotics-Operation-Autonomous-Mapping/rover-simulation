@@ -128,8 +128,30 @@ This launch file uses the same default `GZ_PARTITION=roam_rover_wheels` as the
 simulator, bridges joint states and `/clock` from Gazebo to ROS, and runs both
 encoder nodes with simulation time. It preserves a custom `GZ_PARTITION` if set.
 Use `log_readings:=false` to disable the logging subscriber. Encoder timestamps
-come from the simulated joint measurements; these are simulated joint angles
-and velocities, without hardware tick quantization or sensor noise.
+come from the simulated joint measurements. The encoder publisher adds independent,
+zero-mean Gaussian noise to each wheel's angle and speed on each valid message.
+Defaults are **0.001 rad** angle standard deviation and **0.01 rad/s** speed
+standard deviation. These are illustrative values, not calibrated hardware specs.
+The raw joint-state topic and Gazebo odometry are unchanged; hardware tick
+quantization, missed ticks, bias and drift are not modelled. Angle and speed noise
+are sampled independently, so the reported speed is not the derivative of the
+noisy angle.
+
+Noise settings are startup-only ROS parameters, also exposed as launch arguments:
+
+```bash
+ros2 launch my_robot wheel_encoders.launch.py \
+  angle_noise_stddev:=0.002 velocity_noise_stddev:=0.02 noise_seed:=42
+
+# Restore exact joint measurements:
+ros2 launch my_robot wheel_encoders.launch.py \
+  angle_noise_stddev:=0.0 velocity_noise_stddev:=0.0
+```
+
+Standard deviations must be finite and nonnegative. `noise_seed` defaults to `-1`
+(random); use a nonnegative integer to reproduce the noise sequence for the same
+valid input message sequence. For manual node startup, use ROS parameter flags,
+for example `ros2 run my_robot wheel_encoder_publisher --ros-args -p noise_seed:=42`.
 
 To check the output in another sourced terminal:
 
