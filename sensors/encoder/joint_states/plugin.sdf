@@ -1,0 +1,11 @@
+<plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+  <topic>/rover/wheel_joint_states</topic>
+  <joint_name>front_left_wheel_joint</joint_name>
+  <joint_name>rear_left_wheel_joint</joint_name>
+  <joint_name>front_right_wheel_joint</joint_name>
+  <joint_name>rear_right_wheel_joint</joint_name>
+  <update_rate>50</update_rate>
+</plugin>
+
+    
+    

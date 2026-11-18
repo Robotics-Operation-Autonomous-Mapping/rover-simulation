@@ -1,0 +1,304 @@
+{
+  "version": 1,
+  "description": "ATLAS proposed interface v0.1, November 2026. All simulation mounts, noise, intrinsics and scan parameters are provisional, not measured hardware calibration.",
+  "instances": [
+    {
+      "id": "camera_front_left",
+      "link": "camera_front_left_link",
+      "joint": "camera_front_left_mount",
+      "sensor_name": "camera_front_left_sensor",
+      "parent": "base_link",
+      "frame": "camera_front_left_frame",
+      "calibration": {
+        "mount_pose": "0.30 0.12 0.18 0 0 0",
+        "sensor_pose": "0.045 0 0 0 0 0",
+        "optical_pose": "0 0 0 -1.5707963267948966 0 -1.5707963267948966",
+        "status": "provisional: 0.24 m front stereo baseline; pinhole intrinsics from 640x480 and horizontal_fov=1.047; zero distortion"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/camera/front_left/image_raw",
+        "data": {
+          "ros": "/rover/camera/front_left/image_raw",
+          "gz": "/rover/camera/front_left/image_raw"
+        },
+        "camera_info": {
+          "ros": "/rover/camera/front_left/camera_info",
+          "gz": "/rover/camera/front_left/camera_info"
+        }
+      },
+      "optical_frame": "camera_front_left_optical_frame",
+      "hardware": "Daheng VEN-161-61U3C-M01 (Sony IMX296), CS-mount lens",
+      "implementation": "camera/pinhole_rgb",
+      "enabled": true
+    },
+    {
+      "id": "camera_front_right",
+      "link": "camera_front_right_link",
+      "joint": "camera_front_right_mount",
+      "sensor_name": "camera_front_right_sensor",
+      "parent": "base_link",
+      "frame": "camera_front_right_frame",
+      "calibration": {
+        "mount_pose": "0.30 -0.12 0.18 0 0 0",
+        "sensor_pose": "0.045 0 0 0 0 0",
+        "optical_pose": "0 0 0 -1.5707963267948966 0 -1.5707963267948966",
+        "status": "provisional: 0.24 m front stereo baseline; pinhole intrinsics from 640x480 and horizontal_fov=1.047; zero distortion"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/camera/front_right/image_raw",
+        "data": {
+          "ros": "/rover/camera/front_right/image_raw",
+          "gz": "/rover/camera/front_right/image_raw"
+        },
+        "camera_info": {
+          "ros": "/rover/camera/front_right/camera_info",
+          "gz": "/rover/camera/front_right/camera_info"
+        }
+      },
+      "optical_frame": "camera_front_right_optical_frame",
+      "hardware": "Daheng VEN-161-61U3C-M01 (Sony IMX296), CS-mount lens",
+      "implementation": "camera/pinhole_rgb",
+      "enabled": true
+    },
+    {
+      "id": "camera_left",
+      "link": "camera_left_link",
+      "joint": "camera_left_mount",
+      "sensor_name": "camera_left_sensor",
+      "parent": "base_link",
+      "frame": "camera_left_frame",
+      "calibration": {
+        "mount_pose": "0 0.20 0.18 0 0 1.5707963267948966",
+        "sensor_pose": "0.045 0 0 0 0 0",
+        "optical_pose": "0 0 0 -1.5707963267948966 0 -1.5707963267948966",
+        "status": "provisional: 0.24 m front stereo baseline; pinhole intrinsics from 640x480 and horizontal_fov=1.047; zero distortion"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/camera/left/image_raw",
+        "data": {
+          "ros": "/rover/camera/left/image_raw",
+          "gz": "/rover/camera/left/image_raw"
+        },
+        "camera_info": {
+          "ros": "/rover/camera/left/camera_info",
+          "gz": "/rover/camera/left/camera_info"
+        }
+      },
+      "optical_frame": "camera_left_optical_frame",
+      "hardware": "Daheng VEN-161-61U3C-M01 (Sony IMX296), CS-mount lens",
+      "implementation": "camera/pinhole_rgb",
+      "enabled": true
+    },
+    {
+      "id": "camera_right",
+      "link": "camera_right_link",
+      "joint": "camera_right_mount",
+      "sensor_name": "camera_right_sensor",
+      "parent": "base_link",
+      "frame": "camera_right_frame",
+      "calibration": {
+        "mount_pose": "0 -0.20 0.18 0 0 -1.5707963267948966",
+        "sensor_pose": "0.045 0 0 0 0 0",
+        "optical_pose": "0 0 0 -1.5707963267948966 0 -1.5707963267948966",
+        "status": "provisional: 0.24 m front stereo baseline; pinhole intrinsics from 640x480 and horizontal_fov=1.047; zero distortion"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/camera/right/image_raw",
+        "data": {
+          "ros": "/rover/camera/right/image_raw",
+          "gz": "/rover/camera/right/image_raw"
+        },
+        "camera_info": {
+          "ros": "/rover/camera/right/camera_info",
+          "gz": "/rover/camera/right/camera_info"
+        }
+      },
+      "optical_frame": "camera_right_optical_frame",
+      "hardware": "Daheng VEN-161-61U3C-M01 (Sony IMX296), CS-mount lens",
+      "implementation": "camera/pinhole_rgb",
+      "enabled": true
+    },
+    {
+      "id": "camera_rear",
+      "link": "camera_rear_link",
+      "joint": "camera_rear_mount",
+      "sensor_name": "camera_rear_sensor",
+      "parent": "base_link",
+      "frame": "camera_rear_frame",
+      "calibration": {
+        "mount_pose": "-0.30 0 0.18 0 0 3.141592653589793",
+        "sensor_pose": "0.045 0 0 0 0 0",
+        "optical_pose": "0 0 0 -1.5707963267948966 0 -1.5707963267948966",
+        "status": "provisional: 0.24 m front stereo baseline; pinhole intrinsics from 640x480 and horizontal_fov=1.047; zero distortion"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/camera/rear/image_raw",
+        "data": {
+          "ros": "/rover/camera/rear/image_raw",
+          "gz": "/rover/camera/rear/image_raw"
+        },
+        "camera_info": {
+          "ros": "/rover/camera/rear/camera_info",
+          "gz": "/rover/camera/rear/camera_info"
+        }
+      },
+      "optical_frame": "camera_rear_optical_frame",
+      "hardware": "Daheng VEN-161-61U3C-M01 (Sony IMX296), CS-mount lens",
+      "implementation": "camera/pinhole_rgb",
+      "enabled": true
+    },
+    {
+      "id": "lidar",
+      "link": "lidar_link",
+      "joint": "lidar_mount",
+      "sensor_name": "gpu_lidar",
+      "parent": "base_link",
+      "frame": "lidar_frame",
+      "calibration": {
+        "mount_pose": "0 0 0.28 0 0 0",
+        "sensor_pose": "0 0 0.03 0 0 0"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/lidar",
+        "data": {
+          "ros": "/rover/lidar/points",
+          "gz": "/rover/lidar/points"
+        }
+      },
+      "hardware": "Hesai JT128 (generic GPU ray approximation)",
+      "implementation": "lidar/hesai_jt128",
+      "enabled": true
+    },
+    {
+      "id": "imu",
+      "link": "imu_link",
+      "joint": "imu_mount",
+      "sensor_name": "imu_sensor",
+      "parent": "base_link",
+      "frame": "imu_frame",
+      "calibration": {
+        "mount_pose": "0 0 0.11 0 0 0",
+        "sensor_pose": "0 0 0 0 0 0"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/imu/data",
+        "data": {
+          "ros": "/rover/imu/data",
+          "gz": "/rover/imu/data"
+        }
+      },
+      "hardware": "BNO085 9-DOF breakout",
+      "implementation": "imu/generic",
+      "enabled": true
+    },
+    {
+      "id": "lidar_imu",
+      "link": "lidar_imu_link",
+      "joint": "lidar_imu_mount",
+      "sensor_name": "lidar_imu_sensor",
+      "parent": "lidar_link",
+      "frame": "lidar_imu_frame",
+      "calibration": {
+        "mount_pose": "0 0 0.03 0 0 0",
+        "sensor_pose": "0 0 0 0 0 0"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/lidar/imu",
+        "data": {
+          "ros": "/rover/lidar/imu",
+          "gz": "/rover/lidar/imu"
+        }
+      },
+      "hardware": "JT128 integrated IMU (generic IMU approximation)",
+      "implementation": "imu/generic",
+      "enabled": true
+    },
+    {
+      "id": "magnetometer",
+      "link": "mag_link",
+      "joint": "mag_mount",
+      "sensor_name": "mag_sensor",
+      "parent": "imu_link",
+      "frame": "mag_frame",
+      "calibration": {
+        "mount_pose": "0 0 0 0 0 0",
+        "sensor_pose": "0 0 0 0 0 0"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/imu/mag",
+        "data": {
+          "ros": "/rover/imu/mag",
+          "gz": "/rover/imu/mag"
+        }
+      },
+      "implementation": "imu/magnetometer",
+      "enabled": true
+    },
+    {
+      "id": "gnss",
+      "link": "gnss_link",
+      "joint": "gnss_mount",
+      "sensor_name": "gnss_sensor",
+      "parent": "base_link",
+      "frame": "gnss_frame",
+      "calibration": {
+        "mount_pose": "-0.18 0 0.20 0 0 0",
+        "sensor_pose": "0 0 0 0 0 0"
+      },
+      "settings": {},
+      "topics": {
+        "sensor": "/rover/gnss/fix",
+        "data": {
+          "ros": "/rover/gnss/fix",
+          "gz": "/rover/gnss/fix"
+        }
+      },
+      "hardware": "u-blox ZED-F9P with basic GNSS patch antenna",
+      "implementation": "gnss/navsat",
+      "enabled": true
+    },
+    {
+      "id": "wheel_encoders",
+      "settings": {
+        "wheel_names": [
+          "front_left_wheel_joint",
+          "front_right_wheel_joint",
+          "rear_left_wheel_joint",
+          "rear_right_wheel_joint"
+        ]
+      },
+      "topics": {
+        "input": "/rover/wheel/joint_states",
+        "output": "/rover/wheel_encoders",
+        "odometry": {
+          "gz": "/rover/odom",
+          "ros": "/rover/wheel/odometry"
+        }
+      },
+      "frame": "base_link",
+      "hardware": "Four optical shaft encoders, model TBD; ideal joint measurements",
+      "implementation": "encoder/joint_states",
+      "enabled": true
+    },
+    {
+      "id": "gnss_velocity",
+      "source_instance": "gnss",
+      "frame": "world",
+      "topics": {
+        "output": "/rover/gnss/velocity"
+      },
+      "settings": {},
+      "implementation": "gnss/velocity",
+      "enabled": true
+    }
+  ]
+}

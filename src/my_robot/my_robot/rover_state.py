@@ -1,18 +1,17 @@
 """Publish sensor TF and a synthetic INS stream from simulated rover truth."""
 
-from copy import deepcopy
 import math
 from pathlib import Path
 import random
 import xml.etree.ElementTree as ET
 
-from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
+
 
 
 def transform_from_pose(parent, child, pose):
@@ -61,38 +60,37 @@ def sensor_transforms(model_file):
     return transforms
 
 
+def registry_transforms(registry):
+    return [transform_from_pose(*transform) for transform in registry.transforms()]
+
+
 def synthetic_ins(truth, position_stddev, sample_noise=random.gauss):
-    """Keep the testbed's position noise; orientation and twist remain truth."""
-    ins = deepcopy(truth)
-    for axis in ('x', 'y', 'z'):
-        setattr(ins.pose.pose.position, axis,
-                getattr(ins.pose.pose.position, axis) + sample_noise(0, position_stddev))
-    for index in (0, 7, 14):
-        ins.pose.covariance[index] = position_stddev ** 2
-    return ins
+    """Compatibility helper; implementation is owned by the synthetic INS sensor."""
+    from my_robot.components import load_implementation
+    return load_implementation('ins/synthetic/adapter.py').synthetic_ins(truth, position_stddev, sample_noise)
 
 
 class RoverState(Node):
+    """Publish only TF; sensor processing lives with sensor implementations."""
     def __init__(self):
         super().__init__('rover_sensor_state')
-        default_model = str(Path(get_package_share_directory('my_robot')) /
-                            'models/roam_rover/model.sdf')
-        model_file = self.declare_parameter('model_file', default_model).value
-        self.position_stddev = self.declare_parameter('ins_position_stddev', 0.005).value
-        if not math.isfinite(self.position_stddev) or self.position_stddev < 0:
-            raise ValueError('ins_position_stddev must be finite and nonnegative')
+        import json
+        directory = self.declare_parameter('assembly_dir', '').value
+        if not directory:
+            raise ValueError('assembly_dir is required; launch the assembled simulation')
+        resolved = json.loads((Path(directory)/'resolved.json').read_text())
         self.static_tf = StaticTransformBroadcaster(self)
-        transforms = sensor_transforms(model_file)
+        transforms = [transform_from_pose(*t) for t in resolved['transforms']]
         for transform in transforms:
             transform.header.stamp = self.get_clock().now().to_msg()
-        self.static_tf.sendTransform(transforms)
+        if transforms:
+            self.static_tf.sendTransform(transforms)
         self.dynamic_tf = TransformBroadcaster(self)
-        self.ins_publisher = self.create_publisher(Odometry, '/ins/odom', 10)
-        self.truth_subscription = self.create_subscription(
-            Odometry, '/rover/ground_truth/odometry', self.on_truth,
-            qos_profile_sensor_data
-        )
-        self.get_logger().info('Sensor TF and synthetic INS follow rover ground truth.')
+        truth = resolved['rover'].get('truth')
+        self.truth_subscription = None
+        if truth:
+            self.truth_subscription = self.create_subscription(
+                Odometry, truth['topic'], self.on_truth, qos_profile_sensor_data)
 
     def on_truth(self, truth):
         transform = TransformStamped()
@@ -104,7 +102,6 @@ class RoverState(Node):
         transform.transform.translation.z = position.z
         transform.transform.rotation = truth.pose.pose.orientation
         self.dynamic_tf.sendTransform(transform)
-        self.ins_publisher.publish(synthetic_ins(truth, self.position_stddev))
 
 
 def main(args=None):

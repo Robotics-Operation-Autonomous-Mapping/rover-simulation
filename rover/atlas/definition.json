@@ -1,0 +1,39 @@
+{
+  "base_frame": "base_link",
+  "model": "model.sdf",
+  "truth": {
+    "topic": "/rover/ground_truth/odometry",
+    "frame": "world",
+    "child_frame": "base_link",
+    "rate": 100.0
+  },
+  "bridges": [
+    {
+      "topic_name": "/rover/cmd_vel",
+      "ros_type_name": "geometry_msgs/msg/Twist",
+      "gz_type_name": "gz.msgs.Twist",
+      "direction": "ROS_TO_GZ"
+    },
+    {
+      "topic_name": "/clock",
+      "ros_type_name": "rosgraph_msgs/msg/Clock",
+      "gz_type_name": "gz.msgs.Clock",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "CLOCK"
+    },
+    {
+      "topic_name": "/rover/ground_truth/odometry",
+      "ros_type_name": "nav_msgs/msg/Odometry",
+      "gz_type_name": "gz.msgs.Odometry",
+      "direction": "GZ_TO_ROS"
+    }
+  ],
+  "control": {
+    "bindings": {
+      "command_topic": "plugin[@name='gz::sim::systems::DiffDrive']/topic",
+      "wheel_separation": "plugin[@name='gz::sim::systems::DiffDrive']/wheel_separation",
+      "max_speed": "plugin[@name='gz::sim::systems::DiffDrive']/max_linear_velocity"
+    }
+  },
+  "static_transforms": []
+}

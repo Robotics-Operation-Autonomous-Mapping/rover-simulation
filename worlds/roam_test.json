@@ -1,0 +1,12 @@
+{
+  "spawn_pose": "0 0 0.23 0 0 0",
+  "spherical_coordinates": {
+    "surface_model": "EARTH_WGS84",
+    "world_frame_orientation": "ENU",
+    "latitude_deg": "51.0447",
+    "longitude_deg": "-114.0719",
+    "elevation": "1045",
+    "heading_deg": "0"
+  },
+  "magnetic_field": "0.00000564 0.000022875 -0.000042388"
+}

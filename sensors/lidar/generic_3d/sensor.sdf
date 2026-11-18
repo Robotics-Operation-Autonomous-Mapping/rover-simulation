@@ -1,0 +1,57 @@
+<link name="housing">
+  <inertial>
+    <mass>0.30</mass>
+    <inertia>
+      <ixx>0.00025</ixx>
+      <iyy>0.00025</iyy>
+      <izz>0.000375</izz>
+    </inertia>
+  </inertial>
+  <collision name="housing">
+    <geometry>
+      <cylinder>
+        <radius>0.05</radius>
+        <length>0.05</length>
+      </cylinder>
+    </geometry>
+  </collision>
+  <visual name="housing_visual">
+    <geometry>
+      <cylinder>
+        <radius>0.05</radius>
+        <length>0.05</length>
+      </cylinder>
+    </geometry>
+    <material>
+      <ambient>0.15 0.20 0.22 1</ambient>
+      <diffuse>0.15 0.20 0.22 1</diffuse>
+    </material>
+  </visual>
+  <sensor name="sensor" type="gpu_lidar">
+    <always_on />
+    <update_rate />
+    <topic />
+    <lidar>
+      <scan>
+        <horizontal>
+          <samples />
+          <resolution />
+          <min_angle />
+          <max_angle />
+        </horizontal>
+        <vertical>
+          <samples />
+          <resolution />
+          <min_angle />
+          <max_angle />
+        </vertical>
+      </scan>
+      <range>
+        <min />
+        <max />
+        <resolution />
+      </range>
+    </lidar>
+  </sensor>
+</link>
+    

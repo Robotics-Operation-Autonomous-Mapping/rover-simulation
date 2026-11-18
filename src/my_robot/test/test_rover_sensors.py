@@ -83,10 +83,9 @@ def test_world_composition_preserves_terrain_and_installs_required_sensor_system
     source = ET.fromstring(original.decode().lstrip()).find('world')
     world = composer.compose_world(WORKSPACE, world_name).find('world')
     assert source_path.read_bytes() == original
-    assert [ET.tostring(m) for m in world.findall('model')] == [
+    assert [ET.tostring(m) for m in world.findall('model') if m.get('name') != 'roam_rover'] == [
         ET.tostring(m) for m in source.findall('model')]
-    assert len([i for i in world.findall('include')
-                if i.findtext('uri') == 'model://roam_rover']) == 1
+    assert len(world.findall("model[@name='roam_rover']")) == 1
     systems = {p.get('name') for p in world.findall('plugin')}
     assert {'gz::sim::systems::Physics', 'gz::sim::systems::Sensors',
             'gz::sim::systems::Imu', 'gz::sim::systems::NavSat'} <= systems

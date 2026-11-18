@@ -1,0 +1,32 @@
+{
+  "kind": "gazebo",
+  "outputs": {
+    "data": {
+      "ros_type_name": "sensor_msgs/msg/Imu",
+      "gz_type_name": "gz.msgs.IMU",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "SENSOR_DATA"
+    }
+  },
+  "family": "imu",
+  "settings": {
+    "always_on": "true",
+    "update_rate": "100",
+    "imu/angular_velocity/x/noise/mean": "0",
+    "imu/angular_velocity/x/noise/stddev": "0.0002",
+    "imu/angular_velocity/y/noise/mean": "0",
+    "imu/angular_velocity/y/noise/stddev": "0.0002",
+    "imu/angular_velocity/z/noise/mean": "0",
+    "imu/angular_velocity/z/noise/stddev": "0.0002",
+    "imu/linear_acceleration/x/noise/mean": "0",
+    "imu/linear_acceleration/x/noise/stddev": "0.017",
+    "imu/linear_acceleration/y/noise/mean": "0",
+    "imu/linear_acceleration/y/noise/stddev": "0.017",
+    "imu/linear_acceleration/z/noise/mean": "0",
+    "imu/linear_acceleration/z/noise/stddev": "0.017"
+  },
+  "required_systems": [
+    "Imu"
+  ],
+  "gazebo_output_suffix": ""
+}

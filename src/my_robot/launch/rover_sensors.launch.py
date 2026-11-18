@@ -1,49 +1,38 @@
-"""Bridge all rover sensors, publish frames and synthetic INS, and open RViz."""
-
+"""Compatibility ROS-only entry point; prefer a shared assembly_dir."""
 import os
 from pathlib import Path
-
+import tempfile
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
-from launch.conditions import IfCondition
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler, SetEnvironmentVariable
+from launch.event_handlers import OnShutdown
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from my_robot.registry import Registry
+from my_robot.assembly import assemble
+from my_robot.runtime import actions
+
+
+def start(context):
+    value=lambda name:LaunchConfiguration(name).perform(context)
+    directory=value('assembly_dir')
+    cleanup=[]
+    if not directory:
+        temporary=tempfile.TemporaryDirectory(prefix='roam-ros-')
+        directory=temporary.name
+        registry=Registry(value('registry_share'),value('profile'),rover=value('rover'),calibration=value('calibration') or None)
+        assemble(registry,'road',directory)
+        def release(context):
+            temporary.cleanup()
+            return []
+        cleanup=[RegisterEventHandler(OnShutdown(on_shutdown=[OpaqueFunction(function=release)]))]
+    return cleanup+actions(directory,gazebo=False,view=value('rviz').lower()=='true',log_readings=value('log_readings').lower()=='true')
 
 
 def generate_launch_description():
-    config = Path(get_package_share_directory('my_robot')) / 'config'
+    defaults={'profile':'default','rover':'atlas','calibration':'','assembly_dir':'',
+              'registry_share':get_package_share_directory('my_robot'),'rviz':'true','log_readings':'false'}
     return LaunchDescription([
-        SetEnvironmentVariable(
-            'GZ_PARTITION', os.environ.get('GZ_PARTITION') or 'roam_rover_sensors'
-        ),
-        DeclareLaunchArgument('rviz', default_value='true',
-                              description='Open the camera and LiDAR sensor view.'),
-        DeclareLaunchArgument('log_readings', default_value='false',
-                              description='Log wheel encoder readings.'),
-        Node(
-            package='ros_gz_bridge', executable='parameter_bridge',
-            name='rover_sensor_bridge', output='screen',
-            parameters=[{'config_file': str(config / 'rover_bridge.yaml'),
-                         'use_sim_time': True}],
-        ),
-        Node(
-            package='my_robot', executable='rover_sensor_state', output='screen',
-            parameters=[{'use_sim_time': True}],
-        ),
-        Node(
-            package='my_robot', executable='wheel_encoder_publisher', output='screen',
-            parameters=[{'use_sim_time': True}],
-        ),
-        Node(
-            package='my_robot', executable='wheel_encoder_subscriber', output='screen',
-            parameters=[{'use_sim_time': True}],
-            condition=IfCondition(LaunchConfiguration('log_readings')),
-        ),
-        Node(
-            package='rviz2', executable='rviz2',
-            arguments=['-d', str(config / 'rover_sensors.rviz')],
-            parameters=[{'use_sim_time': True}],
-            condition=IfCondition(LaunchConfiguration('rviz')),
-        ),
+        SetEnvironmentVariable('GZ_PARTITION',os.environ.get('GZ_PARTITION') or 'roam_rover_sensors'),
+        *[DeclareLaunchArgument(name,default_value=value) for name,value in defaults.items()],
+        OpaqueFunction(function=start),
     ])

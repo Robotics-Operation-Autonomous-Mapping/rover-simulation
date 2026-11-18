@@ -1,0 +1,32 @@
+{
+  "kind": "gazebo",
+  "outputs": {
+    "data": {
+      "ros_type_name": "sensor_msgs/msg/Image",
+      "gz_type_name": "gz.msgs.Image",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "SENSOR_DATA"
+    },
+    "camera_info": {
+      "ros_type_name": "sensor_msgs/msg/CameraInfo",
+      "gz_type_name": "gz.msgs.CameraInfo",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "SENSOR_DATA"
+    }
+  },
+  "family": "camera",
+  "settings": {
+    "always_on": "true",
+    "update_rate": "30",
+    "camera/horizontal_fov": "1.047",
+    "camera/image/width": "640",
+    "camera/image/height": "480",
+    "camera/image/format": "R8G8B8",
+    "camera/clip/near": "0.05",
+    "camera/clip/far": "50"
+  },
+  "required_systems": [
+    "Sensors"
+  ],
+  "gazebo_output_suffix": ""
+}

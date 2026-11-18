@@ -1,6 +1,35 @@
 # ROAM Simulation environment
 
-Supported: **Ubuntu 24.04 LTS**, x86_64 or aarch64. Standard stack: **ROS 2 Jazzy**, **Gazebo Harmonic**, **ROS–Gazebo bridge**, **GCC/G++ 13+**, **CMake 3.22+**, **C++20**, RViz2, colcon, rosdep, ros2_control.
+## Reusable components and calibration-driven assembly
+
+Reusable rover, sensor and world components live in `rover/`, `sensors/` and
+`worlds/`. `calibration/atlas.json` specifies sensor instances, mounting poses,
+topics and overrides. `calibration/legacy.json` preserves the original setup.
+The assembler generates one shared bundle for Gazebo, ROS bridges, TF and
+sensor-specific adapters.
+
+See [Architecture, commands and codebase diagram](docs/REGISTRY_README.md).
+
+```bash
+# Inspect without ROS or Gazebo (output must be empty):
+python3 scripts/assemble.py --rover atlas --world forest \
+  --calibration calibration/atlas.json --output build/atlas-inspect
+python3 scripts/validate.py --assembly build/atlas-inspect
+
+# On the configured Ubuntu runtime:
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-up-to my_robot
+source install/setup.bash
+python3 scripts/run.py --rover atlas --world forest \
+  --calibration calibration/atlas.json --control
+```
+
+Existing script entry points remain supported and select the original sensor
+configuration by default. The older integrated-rover instructions below refer
+to that legacy configuration. The ATLAS components are simulation approximations;
+measured hardware calibration and LiDAR per-point timing remain limitations.
+
+Supported: **Ubuntu 24.04 LTS**, x86_64 or aarch64. Standard stack: **ROS 2 Jazzy**, **Gazebo Harmonic**, **ROSâ€“Gazebo bridge**, **GCC/G++ 13+**, **CMake 3.22+**, **C++20**, RViz2, colcon, rosdep, ros2_control.
 
 ## Rover with all sensors
 
@@ -44,9 +73,9 @@ In another terminal, source `/opt/ros/jazzy/setup.bash` and `install/setup.bash`
 
 | Sensor / output | ROS topic | Message type | Configured rate in simulation time |
 | --- | --- | --- | --- |
-| Front RGB camera, 640 × 480 | `/cameras/surround_front/image` | `sensor_msgs/msg/Image` | 30 Hz |
+| Front RGB camera, 640 Ã— 480 | `/cameras/surround_front/image` | `sensor_msgs/msg/Image` | 30 Hz |
 | Camera calibration | `/cameras/surround_front/camera_info` | `sensor_msgs/msg/CameraInfo` | 30 Hz |
-| 360° LiDAR, 1800 × 32 rays | `/lidar_points` | `sensor_msgs/msg/PointCloud2` | 10 Hz |
+| 360Â° LiDAR, 1800 Ã— 32 rays | `/lidar_points` | `sensor_msgs/msg/PointCloud2` | 10 Hz |
 | IMU | `/imu` | `sensor_msgs/msg/Imu` | 100 Hz |
 | GNSS | `/gnss/fix` | `sensor_msgs/msg/NavSatFix` | 20 Hz |
 | Synthetic INS | `/ins/odom` | `nav_msgs/msg/Odometry` | 100 Hz |
@@ -66,12 +95,12 @@ or transport cannot keep up. Simulation-time rates also differ from wall-clock
 rates when the simulator runs slower than real time.
 
 GNSS uses Gazebo's native NavSat sensor with a WGS84 origin at latitude
-51.0447°, longitude -114.0719°, elevation 1045 m, in an east/north/up world.
-Horizontal noise is 0.00000018 degrees (roughly 1–2 cm here), following the
+51.0447Â°, longitude -114.0719Â°, elevation 1045 m, in an east/north/up world.
+Horizontal noise is 0.00000018 degrees (roughly 1â€“2 cm here), following the
 [Gazebo Sensors 8 angular-noise convention](https://github.com/gazebosim/gz-sensors/blob/gz-sensors8/src/NavSatSensor.cc).
 Altitude noise is 4 cm. The native ROS bridge leaves GNSS covariance unknown.
 The IMU has Gaussian angular-velocity and acceleration noise. LiDAR uses a
-generic 360° scan based on the branch settings; it does not reproduce Livox's
+generic 360Â° scan based on the branch settings; it does not reproduce Livox's
 scanning pattern.
 
 The INS output preserves the original testbed's approach: simulated 3D ground
@@ -80,9 +109,10 @@ This is a synthetic test signal, not an inertial estimator or GNSS/IMU fusion.
 The `world -> base_link` TF also follows truth so the sensor view stays aligned;
 wheel odometry remains a separate measurement.
 
-Sensor frames are read from `models/roam_rover/model.sdf`, including each
-sensor's offset from its housing and the camera optical-frame rotation. Bridge
-configuration and the RViz layout are in `src/my_robot/config/`. All sensor
+Sensor frames are generated from the selected calibration, including each
+sensor's offset from its housing and the camera optical-frame rotation. The
+checked-in `models/roam_rover/model.sdf`, bridge YAML and RViz configuration are
+generated compatibility snapshots of the default profile. All sensor
 processes use `GZ_PARTITION=roam_rover_sensors` by default and honor a custom
 value. For a manually started viewer and bridge against this simulation:
 

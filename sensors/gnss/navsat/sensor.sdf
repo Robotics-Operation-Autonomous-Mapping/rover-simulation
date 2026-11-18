@@ -1,0 +1,52 @@
+<link name="housing">
+  <inertial>
+    <mass>0.05</mass>
+    <inertia>
+      <ixx>0.00001</ixx>
+      <iyy>0.00001</iyy>
+      <izz>0.00002</izz>
+    </inertia>
+  </inertial>
+  <collision name="housing">
+    <geometry>
+      <cylinder>
+        <radius>0.03</radius>
+        <length>0.02</length>
+      </cylinder>
+    </geometry>
+  </collision>
+  <visual name="housing_visual">
+    <geometry>
+      <cylinder>
+        <radius>0.03</radius>
+        <length>0.02</length>
+      </cylinder>
+    </geometry>
+    <material>
+      <ambient>0.9 0.9 0.9 1</ambient>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+    </material>
+  </visual>
+  <sensor name="sensor" type="navsat">
+    <always_on />
+    <update_rate />
+    <topic />
+    <navsat>
+      <position_sensing>
+        <horizontal>
+          <noise type="gaussian">
+            <mean />
+            <stddev />
+          </noise>
+        </horizontal>
+        <vertical>
+          <noise type="gaussian">
+            <mean />
+            <stddev />
+          </noise>
+        </vertical>
+      </position_sensing>
+    </navsat>
+  </sensor>
+</link>
+    

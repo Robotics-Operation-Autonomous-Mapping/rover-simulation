@@ -1,6 +1,8 @@
 from glob import glob
+from pathlib import Path
 
 from setuptools import find_packages, setup
+from my_robot.asset_install import asset_data_files
 
 package_name = 'my_robot'
 
@@ -13,10 +15,10 @@ setup(
          ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
-        ('share/' + package_name + '/config', glob('config/*')),
+        ('share/' + package_name + '/config', [p for p in glob('config/*') if Path(p).is_file()]),
         ('share/' + package_name + '/models/roam_rover',
          ['../../models/roam_rover/model.sdf']),
-    ],
+    ] + asset_data_files(Path('../..')),
     install_requires=['setuptools'],
     tests_require=['pytest'],
     zip_safe=True,
@@ -31,6 +33,7 @@ setup(
             'wheel_encoder_subscriber = '
             'my_robot.wheel_encoder_subscriber:main',
             'rover_sensor_state = my_robot.rover_state:main',
+            'sensor_adapter = my_robot.sensor_adapter:main',
         ],
     },
 )

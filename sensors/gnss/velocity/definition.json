@@ -1,0 +1,21 @@
+{
+  "kind": "derived",
+  "ros_type_name": "geometry_msgs/msg/TwistWithCovarianceStamped",
+  "family": "gnss_velocity",
+  "settings": {
+    "publish_rate": 20.0,
+    "velocity_stddev": 0.02
+  },
+  "required_systems": [],
+  "requires_truth": true,
+  "adapter": "adapter.py",
+  "validator": "validate.py",
+  "derived_outputs": [
+    {
+      "topic": "topics.output",
+      "frame": "frame",
+      "rate": "settings.publish_rate",
+      "ros_type_name": "geometry_msgs/msg/TwistWithCovarianceStamped"
+    }
+  ]
+}

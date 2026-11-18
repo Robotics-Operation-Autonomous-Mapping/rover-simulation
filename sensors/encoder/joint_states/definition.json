@@ -1,0 +1,35 @@
+{
+  "kind": "derived",
+  "input_bridge": {
+    "ros_type_name": "sensor_msgs/msg/JointState",
+    "gz_type_name": "gz.msgs.Model",
+    "direction": "GZ_TO_ROS",
+    "qos_profile": "SENSOR_DATA"
+  },
+  "family": "wheel_encoders",
+  "settings": {
+    "update_rate": "50",
+    "publish_rate": 50.0,
+    "wheel_names": []
+  },
+  "required_systems": [],
+  "plugin_bindings": {
+    "topic": "topics.input",
+    "update_rate": "settings.update_rate"
+  },
+  "plugin_lists": {
+    "joint_name": "settings.wheel_names"
+  },
+  "adapter": "adapter.py",
+  "extra_bridges": [
+    {
+      "topics_key": "odometry",
+      "ros_type_name": "nav_msgs/msg/Odometry",
+      "gz_type_name": "gz.msgs.Odometry",
+      "direction": "GZ_TO_ROS",
+      "frame": "odom",
+      "rate": 50.0
+    }
+  ],
+  "validator": "validate.py"
+}

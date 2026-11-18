@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the ROAM test world with the same sensors and viewers as the main launcher.
+# Compatibility entry point; implementation is grouped by responsibility.
 set -euo pipefail
-ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-exec bash "$ROOT/scripts/launch_roam.sh" roam_test "$@"
+HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "$HERE/launch/run_rover.sh" "$@"

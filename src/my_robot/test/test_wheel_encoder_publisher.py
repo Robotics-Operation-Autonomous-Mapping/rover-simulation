@@ -20,7 +20,8 @@ def convert(msg):
     publisher = Mock()
     logger = Mock()
     node = SimpleNamespace(encoder_publisher=publisher, get_logger=lambda: logger,
-                           last_publish_stamp_ns=None, publish_period_ns=20_000_000)
+                           last_publish_stamp_ns=None, publish_period_ns=20_000_000,
+                           wheel_names=WHEELS)
     WheelEncoderPublisher.joint_state_callback(node, msg)
     return publisher, logger
 
@@ -80,6 +81,7 @@ def test_throttles_by_simulation_timestamp_and_recovers_after_reset():
     node = SimpleNamespace(
         encoder_publisher=publisher, get_logger=Mock(),
         publish_period_ns=20_000_000, last_publish_stamp_ns=None,
+        wheel_names=WHEELS,
     )
     msg = JointState()
     msg.name = WHEELS.copy()

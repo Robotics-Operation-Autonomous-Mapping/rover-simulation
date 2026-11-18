@@ -1,0 +1,24 @@
+{
+  "kind": "gazebo",
+  "outputs": {
+    "data": {
+      "ros_type_name": "sensor_msgs/msg/NavSatFix",
+      "gz_type_name": "gz.msgs.NavSat",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "SENSOR_DATA"
+    }
+  },
+  "family": "gnss",
+  "settings": {
+    "always_on": "true",
+    "update_rate": "20",
+    "navsat/position_sensing/horizontal/noise/mean": "0",
+    "navsat/position_sensing/horizontal/noise/stddev": "0.00000018",
+    "navsat/position_sensing/vertical/noise/mean": "0",
+    "navsat/position_sensing/vertical/noise/stddev": "0.04"
+  },
+  "required_systems": [
+    "NavSat"
+  ],
+  "gazebo_output_suffix": ""
+}

@@ -1,0 +1,31 @@
+{
+  "kind": "gazebo",
+  "outputs": {
+    "data": {
+      "ros_type_name": "sensor_msgs/msg/PointCloud2",
+      "gz_type_name": "gz.msgs.PointCloudPacked",
+      "direction": "GZ_TO_ROS",
+      "qos_profile": "SENSOR_DATA"
+    }
+  },
+  "family": "lidar",
+  "settings": {
+    "always_on": "true",
+    "update_rate": "10",
+    "lidar/scan/horizontal/samples": "1800",
+    "lidar/scan/horizontal/resolution": "1",
+    "lidar/scan/horizontal/min_angle": "-3.14159265359",
+    "lidar/scan/horizontal/max_angle": "3.14159265359",
+    "lidar/scan/vertical/samples": "32",
+    "lidar/scan/vertical/resolution": "1",
+    "lidar/scan/vertical/min_angle": "-0.261799",
+    "lidar/scan/vertical/max_angle": "0.523599",
+    "lidar/range/min": "0.1",
+    "lidar/range/max": "30",
+    "lidar/range/resolution": "0.01"
+  },
+  "required_systems": [
+    "Sensors"
+  ],
+  "gazebo_output_suffix": "/points"
+}
