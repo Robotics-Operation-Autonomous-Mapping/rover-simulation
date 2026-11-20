@@ -26,9 +26,6 @@ def compose_world(registry, world_name, spawn_pose=None):
     name = model.get('name')
     if any(m.get('name') == name for m in world.findall('model')):
         raise ValueError(f'World already contains a model named {name}')
-    # Legacy worlds may explicitly include the original rover.
-    for include in list(world.findall('include')):
-        if include.findtext('uri') == 'model://roam_rover': world.remove(include)
     ET.SubElement(model, 'pose').text = pose
     world.append(model)
     systems = {'Physics', 'UserCommands', 'SceneBroadcaster'}

@@ -9,13 +9,13 @@ from my_robot.runtime import actions
 def start(context):
     boolean = lambda name: LaunchConfiguration(name).perform(context).lower() == 'true'
     return actions(LaunchConfiguration('assembly_dir').perform(context),
-                   ros=boolean('ros'), control=boolean('control'), view=boolean('view'),
+                   gazebo=boolean('gazebo'), ros=boolean('ros'), control=boolean('control'), view=boolean('view'),
                    headless=boolean('headless'), log_readings=boolean('log_readings'),
                    renderer=LaunchConfiguration('renderer').perform(context))
 
 
 def generate_launch_description():
-    defaults = {'ros':'true','control':'false','view':'true','headless':'false','renderer':'ogre2','log_readings':'false'}
+    defaults = {'gazebo':'true','ros':'true','control':'false','view':'true','headless':'false','renderer':'ogre2','log_readings':'false'}
     return LaunchDescription([
         SetEnvironmentVariable('GZ_PARTITION',os.environ.get('GZ_PARTITION') or 'roam_rover_sensors'),
         DeclareLaunchArgument('assembly_dir'),

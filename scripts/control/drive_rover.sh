@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Keep this workspace separate from other Gazebo simulations on this VM.
-export GZ_PARTITION="${GZ_PARTITION:-roam_rover_wheels}"
+export GZ_PARTITION="${GZ_PARTITION:-roam_rover_sensors}"
 if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then
     echo "Usage: $0 LINEAR_M_PER_S ANGULAR_RAD_PER_S [DURATION_SECONDS]"
     echo "Example: $0 0.3 0 3"
@@ -35,7 +35,7 @@ command -v gz >/dev/null || { echo "Gazebo is missing." >&2; exit 1; }
 subscriber_info=$(gz topic -i -t /rover/cmd_vel)
 if ! [[ "$subscriber_info" == *"Subscribers ["* ]]; then
     echo "No rover drive subscriber in GZ_PARTITION=$GZ_PARTITION." >&2
-    echo "Restart ~/rover-simulation/scripts/run_rover.sh, then retry this command." >&2
+    echo "Start python3 scripts/run.py --world road, then retry this command." >&2
     exit 1
 fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

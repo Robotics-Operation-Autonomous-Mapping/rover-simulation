@@ -1,6 +1,7 @@
 """Portable regression and modular assembly tests; no ROS or Gazebo required."""
 from copy import deepcopy
 import json
+import ast
 import math
 from pathlib import Path
 import shutil
@@ -40,13 +41,13 @@ def normalize(mappings):
 class RegistryTests(unittest.TestCase):
     def test_original_model_and_bridge_are_preserved(self):
         before=ET.fromstring((SHARE/'test/fixtures/original_rover.sdf').read_text().lstrip())
-        registry=Registry(ROOT)
+        registry=Registry(ROOT,calibration=ROOT/'calibration/legacy.json')
         self.assertEqual(canonical(before),canonical(registry.model()))
         bridge=json.loads((SHARE/'test/fixtures/original_bridge.json').read_text())
         self.assertEqual(normalize(bridge),normalize(registry.bridges()))
 
     def test_atlas_topic_contract(self):
-        registry=Registry(ROOT,'atlas')
+        registry=Registry(ROOT)
         actual={o['topic']:o['type'] for o in registry.outputs()}
         expected={'/rover/lidar/points':'sensor_msgs/msg/PointCloud2',
                   '/rover/lidar/imu':'sensor_msgs/msg/Imu', '/rover/imu/data':'sensor_msgs/msg/Imu',
@@ -60,10 +61,10 @@ class RegistryTests(unittest.TestCase):
         self.assertFalse(registry.by_definition('ins'))
         self.assertEqual(len(registry.by_definition('camera')),5)
 
-    def test_every_profile_and_world_preserves_terrain(self):
-        for profile in ('default','atlas','camera','lidar','localization'):
-            registry=Registry(ROOT,profile)
-            for name in ('road','forest','maze','roam_test'):
+    def test_every_calibration_and_world_preserves_terrain(self):
+        for profile in ('legacy','atlas','camera','lidar','localization'):
+            registry=Registry(ROOT,calibration=ROOT/'calibration'/f'{profile}.json')
+            for name in ('road','forest','maze','roam_test','empty','camera_test'):
                 with self.subTest(profile=profile,world=name):
                     path=ROOT/'worlds'/f'{name}.sdf'
                     before=path.read_bytes()
@@ -74,8 +75,93 @@ class RegistryTests(unittest.TestCase):
                                      [canonical(m) for m in world.findall('model') if m.get('name')!='roam_rover'])
                     self.assertEqual(len(world.findall("model[@name='roam_rover']")),1)
 
+    def test_every_calibration_world_bundle_and_adapter_factory(self):
+        for calibration in sorted((ROOT/'calibration').glob('*.json')):
+            registry = Registry(ROOT, calibration=calibration)
+            for world in sorted((ROOT/'worlds').glob('*.sdf')):
+                with self.subTest(calibration=calibration.name, world=world.stem), tempfile.TemporaryDirectory() as temp:
+                    output = Path(temp)/'bundle'
+                    resolved = assemble(registry, world.stem, output)
+                    for name in ('world.sdf', 'model.sdf', 'resolved.json', 'bridge.yaml',
+                                 'command_bridge.yaml', 'tf.json', 'sensors.rviz'):
+                        self.assertTrue((output/name).is_file(), name)
+                    ET.parse(output/'world.sdf')
+                    self.assertEqual(json.loads((output/'command_bridge.yaml').read_text()),
+                                     [b for b in resolved['bridges'] if b.get('direction') == 'ROS_TO_GZ'])
+                    expected = {i['id'] for i in registry.instances
+                                if registry.active(i) and 'adapter' in registry.definition(i)}
+                    self.assertEqual({a['instance'] for a in resolved['adapters']}, expected)
+                    for adapter in resolved['adapters']:
+                        module = ast.parse((output/adapter['path']).read_text())
+                        factory = next(n for n in module.body
+                                       if isinstance(n, ast.FunctionDef) and n.name == 'create_node')
+                        self.assertEqual([a.arg for a in factory.args.args], ['instance', 'resolved'])
+
+    def test_generic_entry_point_loads_each_copied_adapter(self):
+        # Exercise real adapter imports/factories with ROS boundary doubles.
+        # This verifies discovery and lifetime, not DDS or message generation.
+        from types import ModuleType, SimpleNamespace
+        from unittest.mock import Mock, patch
+        from my_robot import sensor_adapter
+        created = []
+
+        class Node:
+            def __init__(self, name):
+                self.name = name
+                self.destroy_node = Mock()
+                created.append(self)
+            def declare_parameter(self, name, default):
+                return SimpleNamespace(value=default)
+            def create_publisher(self, *args): return Mock()
+            def create_subscription(self, *args): return Mock()
+            def get_logger(self): return Mock()
+
+        modules = {}
+        for name in ('rclpy', 'rclpy.node', 'rclpy.qos', 'rclpy.utilities',
+                     'geometry_msgs', 'geometry_msgs.msg', 'nav_msgs', 'nav_msgs.msg',
+                     'sensor_msgs', 'sensor_msgs.msg', 'my_robot_msgs', 'my_robot_msgs.msg'):
+            modules[name] = ModuleType(name)
+        ros = modules['rclpy']
+        ros.init, ros.spin, ros.shutdown = Mock(), Mock(), Mock()
+        ros.ok = lambda: True
+        ros.executors = SimpleNamespace(ExternalShutdownException=RuntimeError)
+        modules['rclpy.node'].Node = Node
+        modules['rclpy.qos'].qos_profile_sensor_data = object()
+        modules['rclpy.utilities'].remove_ros_args = lambda args: args
+        for module, message in [('geometry_msgs.msg', 'TwistWithCovarianceStamped'),
+                                ('nav_msgs.msg', 'Odometry'), ('sensor_msgs.msg', 'JointState'),
+                                ('my_robot_msgs.msg', 'WheelEncoders')]:
+            setattr(modules[module], message, type(message, (), {}))
+        for calibration in ('atlas', 'legacy'):
+            with tempfile.TemporaryDirectory() as temp:
+                output = Path(temp)/'bundle'
+                resolved = assemble(Registry(ROOT, calibration=ROOT/'calibration'/f'{calibration}.json'),
+                                    'road', output)
+                for record in resolved['adapters']:
+                    with patch.dict(sys.modules, modules), patch.object(sys, 'argv',
+                            ['sensor_adapter', str(output), record['instance']]):
+                        sensor_adapter.main()
+                    self.assertEqual(created[-1].name, record['instance']+'_adapter')
+                    ros.spin.assert_called_with(created[-1])
+                    created[-1].destroy_node.assert_called_once()
+        self.assertEqual({node.name for node in created},
+                         {'wheel_encoders_adapter', 'gnss_velocity_adapter', 'ins_adapter'})
+
+    def test_focused_calibrations_preserve_original_selections(self):
+        original = Registry(ROOT, calibration=ROOT/'calibration/legacy.json')
+        families = {'camera': {'camera'}, 'lidar': {'lidar'},
+                    'localization': {'imu', 'gnss', 'ins', 'wheel_encoders'}}
+        for name, selected in families.items():
+            current = Registry(ROOT, calibration=ROOT/'calibration'/f'{name}.json')
+            self.assertEqual(current.enabled, {i['id'] for i in original.instances
+                                              if i['definition'] in selected})
+            for before, after in zip(original.instances, current.instances):
+                expected = deepcopy(before)
+                expected['enabled'] = before['definition'] in selected
+                self.assertEqual(expected, after)
+
     def test_disable_keeps_mass_but_removes_measurements_and_view(self):
-        registry=Registry(ROOT,'atlas',disable=['camera_front_left'])
+        registry=Registry(ROOT,disable=['camera_front_left'])
         model=registry.model().find('model')
         link=model.find("link[@name='camera_front_left_link']")
         self.assertIsNotNone(link.find('inertial'))
@@ -149,7 +235,7 @@ class RegistryTests(unittest.TestCase):
             self.assertEqual(Registry(root,rover='test',calibration=path).instances,[])
 
     def test_resolved_bundle_has_assets_adapters_and_consistent_tf(self):
-        registry=Registry(ROOT,'atlas')
+        registry=Registry(ROOT)
         with tempfile.TemporaryDirectory() as temp:
             output=Path(temp)/'assembled'
             resolved=assemble(registry,'forest',output)
@@ -169,17 +255,17 @@ class RegistryTests(unittest.TestCase):
                 destination=prefix/target; destination.mkdir(parents=True,exist_ok=True)
                 for source in files: shutil.copy2(source,destination/Path(source).name)
             installed=prefix/'share/my_robot'
-            registry=Registry(installed,'atlas')
+            registry=Registry(installed)
             resolved=assemble(registry,'road',prefix/'bundle')
             self.assertEqual(len(resolved['outputs']),18)
             self.assertTrue((prefix/'bundle/assets/atlas/control/keyboard_drive.py').exists())
 
     def test_enable_disable_dependency_validation(self):
-        with self.assertRaises(ValueError): Registry(ROOT,'atlas',disable=['gnss'])
-        registry=Registry(ROOT,'atlas',disable=['gnss','gnss_velocity'])
+        with self.assertRaises(ValueError): Registry(ROOT,disable=['gnss'])
+        registry=Registry(ROOT,disable=['gnss','gnss_velocity'])
         self.assertFalse(any(o['topic']=='/rover/gnss/velocity' for o in registry.outputs()))
         with self.assertRaises(ValueError): Registry(ROOT,disable=['unknown'])
-        with self.assertRaises(ValueError): Registry(ROOT,enable=['camera'],disable=['camera'])
+        with self.assertRaises(ValueError): Registry(ROOT,enable=['camera_front_left'],disable=['camera_front_left'])
 
     def test_antenna_rotation_and_velocity_reset(self):
         result=antenna_position((1,2,3),(0,0,math.sqrt(0.5),math.sqrt(0.5)),(0.5,0,0))

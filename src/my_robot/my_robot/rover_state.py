@@ -1,9 +1,7 @@
-"""Publish sensor TF and a synthetic INS stream from simulated rover truth."""
+"""Publish assembly-defined static sensor TF and dynamic rover truth TF."""
 
 import math
 from pathlib import Path
-import random
-import xml.etree.ElementTree as ET
 
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
@@ -32,42 +30,6 @@ def transform_from_pose(parent, child, pose):
     rotation.z = cr * cp * sy - sr * sp * cy
     return transform
 
-
-def sensor_transforms(model_file):
-    """Read mounts and sensor origins from the same SDF Gazebo loads."""
-    model = ET.fromstring(Path(model_file).read_text().lstrip()).find('model')
-    transforms = []
-    for joint in model.findall("joint[@type='fixed']"):
-        parent, child = joint.findtext('parent'), joint.findtext('child')
-        link = model.find(f"link[@name='{child}']")
-        pose = link.find('pose')
-        if pose is not None and pose.get('relative_to', parent) != parent:
-            raise ValueError(f'{child}: sensor mount must be relative to {parent}')
-        transforms.append(transform_from_pose(
-            parent, child, pose.text if pose is not None else '0 0 0 0 0 0'
-        ))
-        for sensor in link.findall('sensor'):
-            frame = {'camera': 'camera_frame', 'gpu_lidar': 'lidar_frame',
-                     'imu': 'imu_frame', 'navsat': 'gnss_frame'}[sensor.get('type')]
-            transforms.append(transform_from_pose(
-                child, frame, sensor.findtext('pose', '0 0 0 0 0 0')
-            ))
-            if sensor.get('type') == 'camera':
-                transforms.append(transform_from_pose(
-                    frame, sensor.findtext('camera/optical_frame_id'),
-                    f'0 0 0 {-math.pi / 2} 0 {-math.pi / 2}'
-                ))
-    return transforms
-
-
-def registry_transforms(registry):
-    return [transform_from_pose(*transform) for transform in registry.transforms()]
-
-
-def synthetic_ins(truth, position_stddev, sample_noise=random.gauss):
-    """Compatibility helper; implementation is owned by the synthetic INS sensor."""
-    from my_robot.components import load_implementation
-    return load_implementation('ins/synthetic/adapter.py').synthetic_ins(truth, position_stddev, sample_noise)
 
 
 class RoverState(Node):

@@ -30,7 +30,7 @@
       <visual name="original_chassis_mesh">
         <geometry>
           <mesh>
-            <uri>model://roam_rover/meshes/chassis.dae</uri>
+            <uri>meshes/chassis.dae</uri>
             <scale>4 4 4</scale>
           </mesh>
         </geometry>
@@ -196,7 +196,7 @@
       <visual name="tire_mesh">
         <geometry>
           <mesh>
-            <uri>model://roam_rover/meshes/wheel.dae</uri>
+            <uri>meshes/wheel.dae</uri>
             <scale>4 4 4</scale>
           </mesh>
         </geometry>
@@ -255,7 +255,7 @@
       <visual name="tire_mesh">
         <geometry>
           <mesh>
-            <uri>model://roam_rover/meshes/wheel.dae</uri>
+            <uri>meshes/wheel.dae</uri>
             <scale>4 4 4</scale>
           </mesh>
         </geometry>
@@ -314,7 +314,7 @@
       <visual name="tire_mesh">
         <geometry>
           <mesh>
-            <uri>model://roam_rover/meshes/wheel.dae</uri>
+            <uri>meshes/wheel.dae</uri>
             <scale>4 4 4</scale>
           </mesh>
         </geometry>
@@ -373,7 +373,7 @@
       <visual name="tire_mesh">
         <geometry>
           <mesh>
-            <uri>model://roam_rover/meshes/wheel.dae</uri>
+            <uri>meshes/wheel.dae</uri>
             <scale>4 4 4</scale>
           </mesh>
         </geometry>

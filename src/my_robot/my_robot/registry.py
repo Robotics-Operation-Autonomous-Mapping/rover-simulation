@@ -49,12 +49,9 @@ def pose_values(text):
 class Registry:
     """One resolved configuration; no ROS imports and no runtime processes."""
 
-    def __init__(self, share, profile='default', *, rover='atlas', calibration=None, enable=(), disable=()):
+    def __init__(self, share, *, rover='atlas', calibration=None, enable=(), disable=()):
         share = Path(share).resolve()
-        if (share / 'my_robot/registry.py').exists() and (share.parents[1] / 'rover').exists():
-            share = share.parents[1]
         self.share = share
-        self.profile = profile
         self.rover_name = rover
         self.rover_dir = component_path(share / 'rover', rover)
         self.rover = read_json(self.rover_dir / 'definition.json')
@@ -65,9 +62,7 @@ class Registry:
                 if value is None: raise ValueError(f'Missing rover control binding: {path}')
                 self.rover['control'][name] = value
         if calibration is None:
-            if profile not in ('default', 'atlas', 'camera', 'lidar', 'localization'):
-                raise ValueError(f'Unknown compatibility profile: {profile}')
-            calibration = share / 'calibration' / ('atlas.json' if profile == 'atlas' else 'legacy.json')
+            calibration = share / 'calibration/atlas.json'
         calibration = Path(calibration).resolve()
         self.calibration_path = calibration
         self.data = read_json(calibration)
@@ -83,11 +78,6 @@ class Registry:
             instance['definition'] = definition['family']
             instance['settings'] = dict(definition.get('settings', {}), **instance.get('settings', {}))
             instance.setdefault('enabled', True)
-        # Old profile names are only CLI compatibility shortcuts; new configurations use enabled.
-        subsets = {'camera': {'camera'}, 'lidar': {'lidar'}, 'localization': {'imu', 'gnss', 'ins', 'wheel_encoders'}}
-        if profile in subsets:
-            for instance in self.instances:
-                instance['enabled'] = instance['definition'] in subsets[profile]
         ids = {i['id'] for i in self.instances}
         if not set(enable).union(disable) <= ids:
             raise ValueError('Enable/disable refers to an unknown sensor instance')
@@ -269,7 +259,3 @@ class Registry:
 def write_model(root, path):
     ET.indent(root)
     ET.ElementTree(root).write(path, encoding='utf-8', xml_declaration=True)
-
-
-def write_bridge(registry, path):
-    Path(path).write_text(json.dumps(registry.bridges(), indent=2)+'\n', encoding='utf-8')

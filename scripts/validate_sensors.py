@@ -15,7 +15,6 @@ from my_robot.registry import Registry
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', default='atlas')
     parser.add_argument('--rover', default='atlas')
     parser.add_argument('--calibration', type=Path)
     parser.add_argument('--assembly', type=Path)
@@ -30,7 +29,7 @@ def main():
         contracts, instances = resolved['outputs'], resolved['instances']
         base_frame = resolved['rover']['base_frame']
     else:
-        registry = Registry(ROOT, args.profile, rover=args.rover, calibration=args.calibration,
+        registry = Registry(ROOT, rover=args.rover, calibration=args.calibration,
                             enable=args.enable, disable=args.disable)
         contracts, instances = registry.outputs(), registry.instances
         base_frame = registry.data['base_frame']

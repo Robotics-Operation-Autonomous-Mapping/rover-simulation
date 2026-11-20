@@ -6,7 +6,9 @@ from unittest.mock import Mock
 import pytest
 from sensor_msgs.msg import JointState
 
-from my_robot.wheel_encoder_publisher import WheelEncoderPublisher
+from my_robot.components import load_implementation
+
+WheelEncoderPublisher = load_implementation('encoder/joint_states/adapter.py').WheelEncoderPublisher
 
 
 WHEELS = [
@@ -33,7 +35,7 @@ def test_reorders_wheels_and_preserves_simulation_header():
     msg.velocity = [30.0, 99.0, 10.0, 40.0, 20.0]
     msg.header.stamp.sec = 42
     msg.header.stamp.nanosec = 123
-    msg.header.frame_id = 'basic_rover'
+    msg.header.frame_id = 'base_link'
 
     publisher, logger = convert(msg)
 

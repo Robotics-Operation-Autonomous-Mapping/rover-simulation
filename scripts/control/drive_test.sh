@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export GZ_PARTITION="${GZ_PARTITION:-roam_rover_wheels}"
+export GZ_PARTITION="${GZ_PARTITION:-roam_rover_sensors}"
 LINEAR="${1:-0.4}"; ANGULAR="${2:-0.0}"; DURATION="${3:-3}"
 python3 - "$LINEAR" "$ANGULAR" "$DURATION" <<'PYTEST'
 import sys,time,subprocess

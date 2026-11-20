@@ -2,7 +2,6 @@
 
 import math
 
-import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
@@ -11,25 +10,22 @@ from my_robot_msgs.msg import WheelEncoders
 
 
 class WheelEncoderPublisher(Node):
-    def __init__(self, instance=None):
-        super().__init__('wheel_encoder_publisher' if instance is None else instance['id']+'_adapter')
-        settings = instance['settings'] if instance else {}
-        publish_rate = self.declare_parameter('publish_rate', float(settings.get('publish_rate', 50.0))).value
+    def __init__(self, instance):
+        super().__init__(instance['id']+'_adapter')
+        settings = instance['settings']
+        publish_rate = self.declare_parameter('publish_rate', float(settings['publish_rate'])).value
         if not math.isfinite(publish_rate) or publish_rate <= 0:
             raise ValueError('publish_rate must be finite and positive')
         self.publish_period_ns = round(1e9 / publish_rate)
         self.last_publish_stamp_ns = None
-        self.wheel_names = self.declare_parameter('wheel_names', settings.get('wheel_names', [
-            'front_left_wheel_joint', 'front_right_wheel_joint',
-            'rear_left_wheel_joint', 'rear_right_wheel_joint',
-        ])).value
+        self.wheel_names = self.declare_parameter('wheel_names', settings['wheel_names']).value
 
         self.encoder_publisher = self.create_publisher(
-            WheelEncoders, instance['topics']['output'] if instance else '/rover/wheel_encoders', 10
+            WheelEncoders, instance['topics']['output'], 10
         )
         self.joint_state_subscription = self.create_subscription(
             JointState,
-            instance['topics']['input'] if instance else '/rover/wheel_joint_states',
+            instance['topics']['input'],
             self.joint_state_callback,
             qos_profile_sensor_data,
         )
@@ -79,24 +75,6 @@ class WheelEncoderPublisher(Node):
         self.encoder_publisher.publish(encoders)
         self.last_publish_stamp_ns = stamp_ns
 
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = None
-    try:
-        node = WheelEncoderPublisher()
-        rclpy.spin(node)
-    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-        pass
-    finally:
-        if node is not None:
-            node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
 
 
 def create_node(instance, resolved):

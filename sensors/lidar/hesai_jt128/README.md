@@ -8,6 +8,6 @@ Calibration files select this implementation and provide instance names,
 extrinsic poses, topics, frames, enabled state and optional settings overrides.
 They do not modify these shared component files.
 
-See [assembly architecture](../../../docs/REGISTRY_README.md).
+See [assembly architecture](../../../docs/ARCHITECTURE.md).
 
 This is a generic 360x128 GPU-grid approximation, without JT128-specific firing patterns or point timing.

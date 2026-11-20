@@ -1,28 +1,36 @@
 """Check sensor wiring, frame conventions, and synthetic INS behavior."""
 
-from importlib.util import module_from_spec, spec_from_file_location
 import math
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from nav_msgs.msg import Odometry
 import pytest
-import yaml
 
-from my_robot.rover_state import sensor_transforms, synthetic_ins
+from my_robot.rover_state import transform_from_pose
+from my_robot.registry import Registry
+from my_robot.assembly import compose_world
+from my_robot.components import load_implementation
+
+synthetic_ins = load_implementation('ins/synthetic/adapter.py').synthetic_ins
 
 
 WORKSPACE = Path(__file__).resolve().parents[3]
-MODEL = WORKSPACE / 'models/roam_rover/model.sdf'
+def registry():
+    return Registry(WORKSPACE, calibration=WORKSPACE/'calibration/legacy.json')
+
+
+def sensor_transforms():
+    return [transform_from_pose(*t) for t in registry().transforms()]
 
 
 def test_every_sensor_bridge_has_a_connected_frame_and_a_matching_gazebo_topic():
-    model = ET.fromstring(MODEL.read_text().lstrip()).find('model')
+    model = registry().model().find('model')
     sensors = model.findall('link/sensor')
-    transforms = sensor_transforms(MODEL)
+    transforms = sensor_transforms()
     parents = {t.child_frame_id: t.header.frame_id for t in transforms}
     assert len(parents) == len(transforms), 'Duplicate TF child frames'
-    bridge = yaml.safe_load((WORKSPACE / 'src/my_robot/config/rover_bridge.yaml').read_text())
+    bridge = registry().bridges()
     for sensor in sensors:
         topic = sensor.findtext('topic')
         if sensor.get('type') == 'gpu_lidar':
@@ -42,7 +50,7 @@ def test_every_sensor_bridge_has_a_connected_frame_and_a_matching_gazebo_topic()
 
 
 def test_camera_optical_axes_are_right_down_forward():
-    transform = next(t for t in sensor_transforms(MODEL)
+    transform = next(t for t in sensor_transforms()
                      if t.child_frame_id == 'camera_optical_frame')
     q = transform.transform.rotation
     # Third column of the quaternion rotation matrix: optical +Z -> body +X.
@@ -74,14 +82,10 @@ def test_ins_keeps_timestamp_frames_and_motion_without_modifying_truth():
 
 @pytest.mark.parametrize('world_name', ['road', 'maze', 'forest', 'roam_test'])
 def test_world_composition_preserves_terrain_and_installs_required_sensor_systems(world_name):
-    path = WORKSPACE / 'scripts/compose_rover_world.py'
-    spec = spec_from_file_location('compose_rover_world', path)
-    composer = module_from_spec(spec)
-    spec.loader.exec_module(composer)
     source_path = WORKSPACE / 'worlds' / f'{world_name}.sdf'
     original = source_path.read_bytes()
     source = ET.fromstring(original.decode().lstrip()).find('world')
-    world = composer.compose_world(WORKSPACE, world_name).find('world')
+    world = compose_world(registry(), world_name).find('world')
     assert source_path.read_bytes() == original
     assert [ET.tostring(m) for m in world.findall('model') if m.get('name') != 'roam_rover'] == [
         ET.tostring(m) for m in source.findall('model')]

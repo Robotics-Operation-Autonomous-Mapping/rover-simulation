@@ -13,12 +13,8 @@ from my_robot.assembly import assemble
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     arguments(parser)
-    parser.set_defaults(calibration=None)
-    parser.add_argument('legacy_world', nargs='?')
-    parser.add_argument('--profile', choices=['default','atlas','camera','lidar','localization'])
     parser.add_argument('--control', action='store_true')
-    parser.add_argument('--no-controls', dest='control', action='store_false')
-    parser.add_argument('--no-ros', '--no-sensors', dest='no_ros', action='store_true')
+    parser.add_argument('--no-ros', dest='no_ros', action='store_true')
     parser.add_argument('--no-view', action='store_true')
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--render-engine', choices=['ogre','ogre2'])
@@ -26,13 +22,11 @@ def main():
     parser.add_argument('--assemble-only', action='store_true')
     args = parser.parse_args()
     if args.assemble_only and args.output is None: parser.error('--assemble-only requires --output')
-    if args.profile and args.calibration: parser.error('Choose --calibration or legacy --profile, not both')
-    calibration = args.calibration or (None if args.profile else ROOT/'calibration/atlas.json')
     try:
-        registry = Registry(ROOT,args.profile or 'default',rover=args.rover,calibration=calibration,enable=args.enable,disable=args.disable)
+        registry = Registry(ROOT,rover=args.rover,calibration=args.calibration,enable=args.enable,disable=args.disable)
         with tempfile.TemporaryDirectory(prefix='roam-run-') as temporary:
             directory = args.output or Path(temporary)
-            assemble(registry,args.legacy_world or args.world,directory,args.spawn_pose)
+            assemble(registry,args.world,directory,args.spawn_pose)
             print(f'Assembly: {directory.resolve()}',flush=True)
             if args.assemble_only: return 0
             renderer = args.render_engine or 'ogre2'
@@ -42,7 +36,6 @@ def main():
                 except FileNotFoundError: pass
             environment = os.environ.copy()
             environment.setdefault('GZ_PARTITION','roam_rover_sensors')
-            environment['GZ_SIM_RESOURCE_PATH'] = str(ROOT/'models')+os.pathsep+environment.get('GZ_SIM_RESOURCE_PATH','')
             if environment.get('XDG_SESSION_TYPE')=='wayland': environment['QT_QPA_PLATFORM']='xcb'
             command = ['ros2','launch','my_robot','simulation.launch.py',f'assembly_dir:={directory.resolve()}',
                        f'ros:={str(not args.no_ros).lower()}',f'control:={str(args.control and not args.headless).lower()}',
