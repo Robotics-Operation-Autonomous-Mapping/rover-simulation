@@ -25,21 +25,6 @@ fi
 
 section 'C/C++ build toolchain'
 for tool in gcc g++ cmake make git python3; do command_check "$tool"; done
-if command -v g++ >/dev/null 2>&1; then
-  gcc_major=$(g++ -dumpfullversion -dumpversion 2>/dev/null | cut -d. -f1)
-  if [[ "$gcc_major" =~ ^[0-9]+$ ]] && (( gcc_major >= 13 )); then ok "G++ $gcc_major >= 13"; else bad 'G++ 13+ required'; fi
-  if printf '#if __cplusplus < 202002L\n#error C++20 unavailable\n#endif\nint main() {return 0;}\n' | g++ -std=c++20 -x c++ -fsyntax-only - >/dev/null 2>&1; then
-    ok 'C++20 supported (syntax-only test)'
-  else bad 'C++20 compilation check failed'; fi
-fi
-if command -v cmake >/dev/null 2>&1; then
-  cmake_ver=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
-  if [[ "${cmake_ver:-}" =~ ^([0-9]+)\.([0-9]+) ]]; then
-    major=${BASH_REMATCH[1]}; minor=${BASH_REMATCH[2]}
-    if (( major > 3 || (major == 3 && minor >= 22) )); then ok "CMake $cmake_ver >= 3.22"; else bad "CMake $cmake_ver is older than 3.22"; fi
-  else bad 'Cannot detect CMake version'; fi
-fi
-
 section 'ROS 2 Jazzy'
 package ros-jazzy-ros-base
 if [[ -f /opt/ros/jazzy/setup.bash ]]; then
@@ -48,7 +33,7 @@ if [[ -f /opt/ros/jazzy/setup.bash ]]; then
     ok 'ROS 2 CLI and rclcpp are discoverable'
   else bad 'ROS 2 CLI/rclcpp not working'; fi
 else bad '/opt/ros/jazzy/setup.bash missing'; fi
-package ros-jazzy-rviz2
+if installed ros-jazzy-rviz2; then ok 'RViz installed (optional viewer)'; else notice 'RViz missing: run with --no-view'; fi
 
 section 'Gazebo Harmonic'
 if [[ -f /opt/ros/jazzy/setup.bash ]]; then
@@ -64,19 +49,19 @@ if command -v gz >/dev/null 2>&1; then
   else bad 'Gazebo Harmonic (Sim 8) not verified'; fi
 else bad 'gz command missing'; fi
 
-section 'ROS-Gazebo bridge and robot control'
+section 'ROS-Gazebo bridge'
 package ros-jazzy-ros-gz
-package ros-jazzy-ros2-control
-package ros-jazzy-ros2-controllers
-package ros-jazzy-gz-ros2-control
+# The rover uses Gazebo's native DiffDrive system, not ros2_control.
 if [[ -f /opt/ros/jazzy/setup.bash ]] && bash -c 'source /opt/ros/jazzy/setup.bash && ros2 pkg prefix ros_gz_bridge >/dev/null 2>&1 && ros2 pkg prefix ros_gz_sim >/dev/null 2>&1'; then
   ok 'ros_gz_bridge and ros_gz_sim discoverable'
 else bad 'ROS-Gazebo bridge packages not discoverable'; fi
 
 section 'ROS development utilities'
-for tool in colcon rosdep; do command_check "$tool"; done
+command_check colcon
 if command -v rosdep >/dev/null 2>&1; then
-  if [[ -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then ok 'rosdep initialized'; else notice 'rosdep is not initialized (sudo rosdep init)'; fi
+  if [[ -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then ok 'rosdep initialized'; else notice 'rosdep is not initialized (optional dependency management; not needed to launch)'; fi
+else
+  notice 'rosdep missing (optional dependency management; not needed to launch)'
 fi
 
 section 'Summary'

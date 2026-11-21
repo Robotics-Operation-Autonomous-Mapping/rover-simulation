@@ -60,8 +60,7 @@ fi
 
 # GCC/G++ 13 default on Ubuntu 24.04; configure ROS and Gazebo together.
 install_missing build-essential cmake git python3 python3-pip python3-venv \
-  ros-dev-tools ros-jazzy-desktop ros-jazzy-ros-gz gz-harmonic \
-  ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-gz-ros2-control
+  ros-dev-tools ros-jazzy-desktop ros-jazzy-ros-gz gz-harmonic
 
 if command -v rosdep >/dev/null 2>&1; then
   if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then

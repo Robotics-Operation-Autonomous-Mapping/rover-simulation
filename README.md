@@ -4,6 +4,8 @@ Gazebo Harmonic / ROS 2 Jazzy simulation assembled from reusable rover, sensor,
 and world components. `calibration/atlas.json` selects sensor instances, mounts,
 settings, topics and frames. Settings are provisional, not measured hardware calibration.
 
+Start with [Setup and command guide](docs/USAGE.md).
+
 See [Architecture and sensor fidelity](docs/ARCHITECTURE.md) for editable diagrams,
 source responsibilities, sensor contracts and the fidelity roadmap.
 See [Cleanup and migration](docs/MIGRATION.md) for retired entry points.
